@@ -3,23 +3,43 @@ import {
   Droplets, 
   Thermometer, 
   TestTube, 
-  Sparkles, 
   Gauge, 
   ChevronRight, 
   ChevronLeft, 
   MapPin, 
   Compass, 
-  Activity, 
-  Zap, 
-  SlidersHorizontal,
   CheckCircle2,
-  Info
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
-import { LOCATION_LOC_001 } from '../data/mockLocation';
 
-export default function MetricsOverlay({ onFocusLocation }) {
+export default function MetricsOverlay({ locationData, latestReading, evaluationData, onFocusLocation, isLoading }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const loc = LOCATION_LOC_001;
+
+  const locId = locationData?.id || 'LOC_001';
+  const locName = locationData?.name || 'Idea Factory';
+  const currentCrop = locationData?.current_crop || 'tomato';
+  const coverageArea = locationData?.coverage_area || '48.5 Hectares';
+  const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
+  const healthStatus = evaluationData?.health_status || 'Optimal';
+
+  const lat = locationData?.latitude ?? 13.0094631;
+  const lng = locationData?.longitude ?? 74.7952437;
+  const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
+
+  const moisture = latestReading?.moisture_pct ?? 27.4;
+  const ph = latestReading?.ph ?? 6.78;
+  const temp = latestReading?.temperature_c ?? 21.5;
+  const ec = latestReading?.ec_ds_m ?? 1.18;
+  const nVal = latestReading?.nitrogen_mg_kg ?? 52.5;
+  const pVal = latestReading?.phosphorus_mg_kg ?? 27.5;
+  const kVal = latestReading?.potassium_mg_kg ?? 104.0;
+
+  const targets = evaluationData?.stage_targets;
+  const nTarget = targets?.n_target_mg_kg ?? 53.8;
+  const pTarget = targets?.p_target_mg_kg ?? 28.0;
+  const kTarget = targets?.k_target_mg_kg ?? 103.0;
+  const trigMoisture = targets?.irrigation_trigger_pct ?? 20.0;
 
   return (
     <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'translate-x-[calc(100%-36px)]' : 'translate-x-0'}`}>
@@ -42,22 +62,25 @@ export default function MetricsOverlay({ onFocusLocation }) {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-mono font-bold text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">
-                  {loc.id}
+                  {locId}
                 </span>
                 <span className="text-xs text-slate-400">Monitoring Hub</span>
+                {isLoading && (
+                  <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
+                )}
               </div>
-              <h2 className="font-bold text-base text-slate-100 mt-1">{loc.name}</h2>
+              <h2 className="font-bold text-base text-slate-100 mt-1">{locName}</h2>
               <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
-                <span className="text-emerald-400 font-medium">{loc.crop}</span>
+                <span className="text-emerald-400 font-medium capitalize">{currentCrop}</span>
                 <span>•</span>
-                <span>{loc.coverageArea}</span>
+                <span>{coverageArea}</span>
               </div>
             </div>
 
             {/* Health Score Dial */}
             <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-950/80 border border-emerald-500/30 shadow-inner">
               <div className="text-2xl font-black font-mono text-emerald-400 leading-none">
-                {loc.healthScore}
+                {healthScore}
               </div>
               <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mt-1">Score</div>
             </div>
@@ -69,7 +92,7 @@ export default function MetricsOverlay({ onFocusLocation }) {
               <Compass className="w-4 h-4 text-emerald-400 shrink-0" />
               <div>
                 <div className="text-[10px] text-slate-400 font-medium">GPS Coordinates</div>
-                <div className="font-mono text-xs text-slate-200">{loc.coordinates.formatted}</div>
+                <div className="font-mono text-xs text-slate-200">{formattedCoords}</div>
               </div>
             </div>
             <button
@@ -87,7 +110,7 @@ export default function MetricsOverlay({ onFocusLocation }) {
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
               <span>Telemetry Indicators</span>
               <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-normal normal-case">
-                <CheckCircle2 className="w-3 h-3" /> Nominal
+                <CheckCircle2 className="w-3 h-3" /> {healthStatus}
               </span>
             </div>
 
@@ -102,17 +125,17 @@ export default function MetricsOverlay({ onFocusLocation }) {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold font-mono text-blue-300">{loc.metrics.moisture.value}</span>
+                  <span className="text-xl font-bold font-mono text-blue-300">{moisture}</span>
                   <span className="text-xs text-slate-400 font-mono">%</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full" 
-                    style={{ width: `${(loc.metrics.moisture.value / 50) * 100}%` }}
+                    style={{ width: `${Math.min(100, (moisture / 50) * 100)}%` }}
                   ></div>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
-                  <span>Target: 25-30%</span>
+                  <span>Trigger: {trigMoisture}%</span>
                   <span className="text-emerald-400 font-medium">Optimal</span>
                 </div>
               </div>
@@ -126,18 +149,18 @@ export default function MetricsOverlay({ onFocusLocation }) {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold font-mono text-purple-300">{loc.metrics.ph.value}</span>
+                  <span className="text-xl font-bold font-mono text-purple-300">{ph}</span>
                   <span className="text-xs text-slate-400 font-mono">pH</span>
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full rounded-full" 
-                    style={{ width: `${(loc.metrics.ph.value / 14) * 100}%` }}
+                    style={{ width: `${(ph / 14) * 100}%` }}
                   ></div>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
-                  <span>Range: 6.5-7.2</span>
-                  <span className="text-emerald-400 font-medium">Neutral</span>
+                  <span>Range: 5.5-7.5</span>
+                  <span className="text-emerald-400 font-medium">Optimal</span>
                 </div>
               </div>
 
@@ -150,12 +173,12 @@ export default function MetricsOverlay({ onFocusLocation }) {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold font-mono text-amber-300">{loc.metrics.temperature.value}</span>
+                  <span className="text-xl font-bold font-mono text-amber-300">{temp}</span>
                   <span className="text-xs text-slate-400 font-mono">°C</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 flex justify-between">
-                  <span>Depth: 15 cm</span>
-                  <span className="text-emerald-400 font-medium">Optimal</span>
+                  <span>Sensor: {locationData?.sensor_id || 'SN_001'}</span>
+                  <span className="text-emerald-400 font-medium">Nominal</span>
                 </div>
               </div>
 
@@ -168,11 +191,11 @@ export default function MetricsOverlay({ onFocusLocation }) {
                   </div>
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-xl font-bold font-mono text-teal-300">{loc.metrics.ec.value}</span>
+                  <span className="text-xl font-bold font-mono text-teal-300">{ec}</span>
                   <span className="text-xs text-slate-400 font-mono">dS/m</span>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 flex justify-between">
-                  <span>Low Salinity</span>
+                  <span>Threshold: 2.5</span>
                   <span className="text-emerald-400 font-medium">Safe</span>
                 </div>
               </div>
@@ -182,8 +205,8 @@ export default function MetricsOverlay({ onFocusLocation }) {
             {/* NPK Macronutrients Breakdown */}
             <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-300">NPK Macronutrients (mg/kg)</span>
-                <span className="text-[10px] text-slate-500 font-mono">Spectroscopy Est.</span>
+                <span className="font-semibold text-slate-300">NPK Nutrient Balance (mg/kg)</span>
+                <span className="text-[10px] text-slate-500 font-mono">Crop Target Sync</span>
               </div>
 
               <div className="space-y-1.5">
@@ -191,10 +214,10 @@ export default function MetricsOverlay({ onFocusLocation }) {
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Nitrogen (N)</span>
-                    <span className="font-mono font-bold text-emerald-400">{loc.metrics.npk.nitrogen.value} mg/kg</span>
+                    <span className="font-mono font-bold text-emerald-400">{nVal} / {nTarget} mg/kg</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: '70%' }}></div>
+                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (nVal / nTarget) * 100)}%` }}></div>
                   </div>
                 </div>
 
@@ -202,10 +225,10 @@ export default function MetricsOverlay({ onFocusLocation }) {
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Phosphorus (P)</span>
-                    <span className="font-mono font-bold text-cyan-400">{loc.metrics.npk.phosphorus.value} mg/kg</span>
+                    <span className="font-mono font-bold text-cyan-400">{pVal} / {pTarget} mg/kg</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: '45%' }}></div>
+                    <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (pVal / pTarget) * 100)}%` }}></div>
                   </div>
                 </div>
 
@@ -213,35 +236,27 @@ export default function MetricsOverlay({ onFocusLocation }) {
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Potassium (K)</span>
-                    <span className="font-mono font-bold text-amber-400">{loc.metrics.npk.potassium.value} mg/kg</span>
+                    <span className="font-mono font-bold text-amber-400">{kVal} / {kTarget} mg/kg</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: '82%' }}></div>
+                    <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (kVal / kTarget) * 100)}%` }}></div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Micro Sensor Node Distribution */}
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80 text-xs space-y-1.5">
-              <div className="text-[11px] font-semibold text-slate-400 flex items-center justify-between">
-                <span>Active Sensor Nodes (LOC_001)</span>
-                <span className="text-[10px] text-emerald-400">3/3 Zones Live</span>
-              </div>
-              {loc.sensorZones.map((sz, idx) => (
-                <div key={idx} className="flex items-center justify-between text-[11px] py-0.5 text-slate-300">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    <span>{sz.zone}</span>
-                  </div>
-                  <div className="font-mono text-slate-400">
-                    <span>M: {sz.moisture}</span>
-                    <span className="mx-1 text-slate-600">|</span>
-                    <span>T: {sz.temp}</span>
-                  </div>
+            {/* Recommendations / Live Insights */}
+            {evaluationData?.recommendations && evaluationData.recommendations.length > 0 && (
+              <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80 text-xs space-y-1">
+                <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Agronomic Recommendations</span>
                 </div>
-              ))}
-            </div>
+                <p className="text-slate-300 text-[11px] leading-relaxed">
+                  {evaluationData.recommendations[0]}
+                </p>
+              </div>
+            )}
 
           </div>
 

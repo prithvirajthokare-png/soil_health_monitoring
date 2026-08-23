@@ -2,22 +2,15 @@ import React from 'react';
 import { Marker, Popup, Circle, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { 
-  Sprout, 
   Droplets, 
   Thermometer, 
   TestTube2, 
-  Sparkles, 
   MapPin, 
-  Activity,
-  Maximize2,
-  Compass,
-  Cpu,
-  Layers
+  Activity
 } from 'lucide-react';
-import { LOCATION_LOC_001 } from '../data/mockLocation';
 
 // Custom DivIcon for LOC_001 with radar pulsing ring
-const createCustomMarkerIcon = () => {
+const createCustomMarkerIcon = (code = 'LOC_001') => {
   return L.divIcon({
     className: 'custom-soil-marker',
     html: `
@@ -38,7 +31,7 @@ const createCustomMarkerIcon = () => {
 
         <!-- Tag Label Floating Above -->
         <div class="absolute -top-7 whitespace-nowrap bg-slate-900/90 text-emerald-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-500/50 shadow-md backdrop-blur-sm pointer-events-none">
-          LOC_001
+          ${code}
         </div>
       </div>
     `,
@@ -48,21 +41,41 @@ const createCustomMarkerIcon = () => {
   });
 };
 
-export default function LocationMarker({ showOverlay }) {
-  const loc = LOCATION_LOC_001;
-  const position = [loc.coordinates.lat, loc.coordinates.lng];
+export default function LocationMarker({ locationData, latestReading, evaluationData, showOverlay }) {
+  const lat = locationData?.latitude ?? 13.0094631;
+  const lng = locationData?.longitude ?? 74.7952437;
+  const position = [lat, lng];
 
-  // Polygon boundary coordinates for Field Alpha (simulated parcel perimeter)
+  const locId = locationData?.id || 'LOC_001';
+  const locName = locationData?.name || 'Idea Factory';
+  const cropName = locationData?.current_crop || 'tomato';
+  const soilType = locationData?.soil_type || 'Loamy Silt';
+  const coverageArea = locationData?.coverage_area || '48.5 Hectares';
+  
+  const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
+  const healthStatus = evaluationData?.health_status || 'Optimal';
+
+  const moistureVal = latestReading?.moisture_pct ?? 27.4;
+  const phVal = latestReading?.ph ?? 6.78;
+  const tempVal = latestReading?.temperature_c ?? 21.5;
+  const nVal = latestReading?.nitrogen_mg_kg ?? 52.5;
+  const pVal = latestReading?.phosphorus_mg_kg ?? 27.5;
+  const kVal = latestReading?.potassium_mg_kg ?? 104.0;
+  const ecVal = latestReading?.ec_ds_m ?? 1.18;
+
+  const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
+
+  // Parcel boundary coordinates around dynamic location
   const fieldBoundary = [
-    [36.7820, -119.4230],
-    [36.7822, -119.4128],
-    [36.7745, -119.4126],
-    [36.7743, -119.4228]
+    [lat + 0.0035, lng - 0.0040],
+    [lat + 0.0037, lng + 0.0042],
+    [lat - 0.0035, lng + 0.0040],
+    [lat - 0.0037, lng - 0.0042]
   ];
 
   return (
     <>
-      {/* Field Alpha Parcel Boundary */}
+      {/* Parcel Boundary */}
       <Polygon 
         positions={fieldBoundary}
         pathOptions={{
@@ -89,7 +102,7 @@ export default function LocationMarker({ showOverlay }) {
       />
 
       {/* Main Sensor Hub Marker */}
-      <Marker position={position} icon={createCustomMarkerIcon()}>
+      <Marker position={position} icon={createCustomMarkerIcon(locId)}>
         <Popup maxWidth={360} className="soil-popup">
           <div className="p-4 bg-slate-900/95 text-slate-100 rounded-xl border border-emerald-500/40 shadow-2xl space-y-3 font-sans">
             
@@ -98,24 +111,24 @@ export default function LocationMarker({ showOverlay }) {
               <div>
                 <div className="flex items-center gap-2">
                   <span className="font-mono font-extrabold text-sm text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
-                    {loc.id}
+                    {locId}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    {loc.healthStatus}
+                    {healthStatus}
                   </span>
                 </div>
-                <h2 className="font-bold text-sm text-slate-100 mt-1">{loc.name}</h2>
+                <h2 className="font-bold text-sm text-slate-100 mt-1">{locName}</h2>
                 <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
                   <MapPin className="w-3 h-3 text-slate-500" />
-                  <span>{loc.coordinates.formatted}</span>
+                  <span>{formattedCoords}</span>
                 </p>
               </div>
 
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Health Index</div>
                 <div className="text-xl font-mono font-bold text-emerald-400">
-                  {loc.healthScore}<span className="text-xs text-slate-400">/100</span>
+                  {healthScore}<span className="text-xs text-slate-400">/100</span>
                 </div>
               </div>
             </div>
@@ -124,27 +137,27 @@ export default function LocationMarker({ showOverlay }) {
             <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
               <div>
                 <span className="text-[10px] text-slate-400 block">Soil Classification</span>
-                <span className="font-medium text-slate-200">{loc.soilType}</span>
+                <span className="font-medium text-slate-200">{soilType}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 block">Target Crop</span>
-                <span className="font-medium text-slate-200">{loc.crop}</span>
+                <span className="text-[10px] text-slate-400 block">Current Crop</span>
+                <span className="font-medium text-emerald-400 capitalize">{cropName}</span>
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 block">Coverage Area</span>
-                <span className="font-medium text-slate-200">{loc.coverageArea}</span>
+                <span className="font-medium text-slate-200">{coverageArea}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 block">Active Telemetry</span>
-                <span className="font-medium text-emerald-400">{loc.activeNodes} IoT Nodes</span>
+                <span className="text-[10px] text-slate-400 block">Active Sensor ID</span>
+                <span className="font-medium text-emerald-400 font-mono">{locationData?.sensor_id || 'SN_001'}</span>
               </div>
             </div>
 
             {/* Core Soil Telemetry Metrics */}
             <div className="space-y-1.5">
               <div className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                <span>Real-Time Soil Parameters</span>
-                <span className="text-[10px] text-slate-500 font-mono">15cm Root Depth</span>
+                <span>Live Soil Telemetry</span>
+                <span className="text-[10px] text-slate-500 font-mono">SQLite Stream</span>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -155,7 +168,7 @@ export default function LocationMarker({ showOverlay }) {
                   </div>
                   <div className="text-[10px] text-slate-400 leading-none">Moisture</div>
                   <div className="text-sm font-mono font-bold text-blue-300 mt-1">
-                    {loc.metrics.moisture.value}%
+                    {moistureVal}%
                   </div>
                   <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
                 </div>
@@ -167,9 +180,9 @@ export default function LocationMarker({ showOverlay }) {
                   </div>
                   <div className="text-[10px] text-slate-400 leading-none">pH Value</div>
                   <div className="text-sm font-mono font-bold text-purple-300 mt-1">
-                    {loc.metrics.ph.value}
+                    {phVal}
                   </div>
-                  <span className="text-[9px] text-emerald-400 font-medium">Neutral</span>
+                  <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
                 </div>
 
                 {/* Temp */}
@@ -179,9 +192,9 @@ export default function LocationMarker({ showOverlay }) {
                   </div>
                   <div className="text-[10px] text-slate-400 leading-none">Soil Temp</div>
                   <div className="text-sm font-mono font-bold text-amber-300 mt-1">
-                    {loc.metrics.temperature.value}°C
+                    {tempVal}°C
                   </div>
-                  <span className="text-[9px] text-slate-400 font-medium">Normal</span>
+                  <span className="text-[9px] text-slate-400 font-medium">Nominal</span>
                 </div>
               </div>
 
@@ -189,9 +202,9 @@ export default function LocationMarker({ showOverlay }) {
               <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800 text-[11px] flex items-center justify-between">
                 <span className="text-slate-400 font-medium">NPK Nutrient Balance:</span>
                 <div className="flex items-center gap-3 font-mono font-bold">
-                  <span className="text-emerald-400">N: {loc.metrics.npk.nitrogen.value}</span>
-                  <span className="text-cyan-400">P: {loc.metrics.npk.phosphorus.value}</span>
-                  <span className="text-amber-400">K: {loc.metrics.npk.potassium.value}</span>
+                  <span className="text-emerald-400">N: {nVal}</span>
+                  <span className="text-cyan-400">P: {pVal}</span>
+                  <span className="text-amber-400">K: {kVal}</span>
                 </div>
               </div>
             </div>
@@ -200,9 +213,9 @@ export default function LocationMarker({ showOverlay }) {
             <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
               <span className="flex items-center gap-1">
                 <Activity className="w-3 h-3 text-emerald-400" />
-                <span>Node LOC_001 Synchronized</span>
+                <span>Node {locId} Synchronized</span>
               </span>
-              <span className="font-mono text-slate-500">Local Cache</span>
+              <span className="font-mono text-emerald-400">Backend Live</span>
             </div>
 
           </div>

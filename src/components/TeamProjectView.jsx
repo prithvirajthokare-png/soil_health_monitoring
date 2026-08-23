@@ -5,7 +5,6 @@ import {
   GraduationCap, 
   Target, 
   MapPin, 
-  Cpu, 
   Sprout, 
   Calendar, 
   CheckCircle2, 
@@ -13,13 +12,8 @@ import {
   Layers, 
   Radio, 
   Mail, 
-  Sparkles, 
-  ShieldCheck, 
   ArrowLeft,
-  Info,
-  BadgeCheck,
-  AlertCircle,
-  HelpCircle
+  AlertCircle
 } from 'lucide-react';
 import { 
   PROJECT_DETAILS, 
@@ -42,13 +36,22 @@ function PlaceholderTag({ text, label = "Placeholder" }) {
   );
 }
 
-export default function TeamProjectView({ onBackToMap }) {
+export default function TeamProjectView({ locationData, onBackToMap }) {
   const p = PROJECT_DETAILS;
   const org = ORGANIZATION_DETAILS;
   const adv = ADVISOR_DETAILS;
   const team = TEAM_MEMBERS;
-  const field = FIELD_DETAILS.primarySite;
+  const fallbackField = FIELD_DETAILS.primarySite;
   const expField = FIELD_DETAILS.secondarySite;
+
+  const locId = locationData?.id || fallbackField.id;
+  const locName = locationData?.name || fallbackField.name;
+  const lat = locationData?.latitude ?? 13.0094631;
+  const lng = locationData?.longitude ?? 74.7952437;
+  const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
+  const crop = locationData?.current_crop || fallbackField.currentCrop;
+  const soilType = locationData?.soil_type || fallbackField.soilClassification;
+  const coverageArea = locationData?.coverage_area || fallbackField.coverageArea;
 
   return (
     <div className="flex-1 w-full h-full overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 lg:p-8 space-y-8 font-sans">
@@ -374,14 +377,14 @@ export default function TeamProjectView({ onBackToMap }) {
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-mono font-extrabold text-sm text-emerald-400 bg-emerald-950 px-2.5 py-0.5 rounded border border-emerald-500/40">
-                      {field.id}
+                      {locId}
                     </span>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30">
                       Primary Active Pilot Site
                     </span>
                   </div>
-                  <h3 className="text-lg font-bold text-slate-100 mt-1">{field.name}</h3>
-                  <p className="text-xs text-slate-400 font-mono mt-0.5">GPS: {field.coordinates} • {field.elevation}</p>
+                  <h3 className="text-lg font-bold text-slate-100 mt-1">{locName}</h3>
+                  <p className="text-xs text-slate-400 font-mono mt-0.5">GPS: {formattedCoords} • 112 m ASL</p>
                 </div>
 
                 <button
@@ -398,19 +401,19 @@ export default function TeamProjectView({ onBackToMap }) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-400 block">Coverage Area</span>
-                  <span className="font-bold text-slate-200">{field.coverageArea}</span>
+                  <span className="font-bold text-slate-200">{coverageArea}</span>
                 </div>
                 <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-400 block">Soil Classification</span>
-                  <span className="font-bold text-slate-200">{field.soilClassification}</span>
+                  <span className="font-bold text-slate-200">{soilType}</span>
                 </div>
                 <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
-                  <span className="text-[10px] text-slate-400 block">Target Crop</span>
-                  <span className="font-bold text-emerald-400">{field.currentCrop}</span>
+                  <span className="text-[10px] text-slate-400 block">Current Crop</span>
+                  <span className="font-bold text-emerald-400 capitalize">{crop}</span>
                 </div>
                 <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800">
                   <span className="text-[10px] text-slate-400 block">Topography</span>
-                  <span className="font-bold text-slate-200">{field.topography}</span>
+                  <span className="font-bold text-slate-200">{fallbackField.topography}</span>
                 </div>
               </div>
 
@@ -422,22 +425,22 @@ export default function TeamProjectView({ onBackToMap }) {
                     <span>Sensor Telemetry Array Architecture</span>
                   </span>
                   <span className="font-mono text-emerald-400 font-bold">
-                    {field.sensorDeployment.totalNodes} Multi-Depth Nodes
+                    {locationData?.sensor_id || 'SN_001'} (Active Node)
                   </span>
                 </div>
 
                 <p className="text-xs text-slate-400">
-                  <strong className="text-slate-300">Hardware Probe:</strong> {field.sensorDeployment.nodeType}
+                  <strong className="text-slate-300">Hardware Probe:</strong> {fallbackField.sensorDeployment.nodeType}
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
                   <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
                     <span className="text-[10px] text-slate-400 block">Probe Depths</span>
-                    <span className="text-slate-200 font-mono text-[11px]">{field.sensorDeployment.depthLevels.join(' | ')}</span>
+                    <span className="text-slate-200 font-mono text-[11px]">{fallbackField.sensorDeployment.depthLevels.join(' | ')}</span>
                   </div>
                   <div className="bg-slate-900/90 p-2 rounded-lg border border-slate-800">
                     <span className="text-[10px] text-slate-400 block">Sampling & Protocol</span>
-                    <span className="text-slate-200 font-mono text-[11px]">{field.sensorDeployment.samplingInterval}</span>
+                    <span className="text-slate-200 font-mono text-[11px]">{fallbackField.sensorDeployment.samplingInterval}</span>
                   </div>
                 </div>
               </div>
@@ -446,19 +449,19 @@ export default function TeamProjectView({ onBackToMap }) {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
                 <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
                   <div className="text-[10px] text-slate-400">Target Moisture</div>
-                  <div className="font-mono font-bold text-blue-400 mt-0.5">{field.soilBaseline.targetMoistureRange}</div>
+                  <div className="font-mono font-bold text-blue-400 mt-0.5">{fallbackField.soilBaseline.targetMoistureRange}</div>
                 </div>
                 <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
                   <div className="text-[10px] text-slate-400">Target pH</div>
-                  <div className="font-mono font-bold text-purple-400 mt-0.5">{field.soilBaseline.targetPH}</div>
+                  <div className="font-mono font-bold text-purple-400 mt-0.5">{fallbackField.soilBaseline.targetPH}</div>
                 </div>
                 <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
                   <div className="text-[10px] text-slate-400">Max Salinity</div>
-                  <div className="font-mono font-bold text-teal-400 mt-0.5">{field.soilBaseline.ecThreshold}</div>
+                  <div className="font-mono font-bold text-teal-400 mt-0.5">{fallbackField.soilBaseline.ecThreshold}</div>
                 </div>
                 <div className="bg-slate-950/50 p-2 rounded-lg border border-slate-800">
                   <div className="text-[10px] text-slate-400">Organic Matter</div>
-                  <div className="font-mono font-bold text-emerald-400 mt-0.5">{field.soilBaseline.organicMatter}</div>
+                  <div className="font-mono font-bold text-emerald-400 mt-0.5">{fallbackField.soilBaseline.organicMatter}</div>
                 </div>
               </div>
 

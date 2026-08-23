@@ -1,8 +1,12 @@
 import React from 'react';
-import { Activity, Radio, Cpu, HardDrive, Wifi, MapPin, Users, Layers } from 'lucide-react';
-import { LOCATION_LOC_001, SYSTEM_INFO } from '../data/mockLocation';
+import { Wifi, MapPin } from 'lucide-react';
 
-export default function StatusBar({ zoomLevel, cursorCoords, activeTab }) {
+export default function StatusBar({ locationData, zoomLevel, cursorCoords, activeTab, isLive }) {
+  const locId = locationData?.id || 'LOC_001';
+  const lat = locationData?.latitude ?? 13.0094631;
+  const lng = locationData?.longitude ?? 74.7952437;
+  const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
+
   return (
     <footer className="bg-slate-900/95 backdrop-blur-md border-t border-slate-800/90 text-slate-400 text-xs px-4 py-2 flex flex-wrap items-center justify-between gap-3 z-30 select-none shrink-0 font-mono">
       
@@ -14,8 +18,8 @@ export default function StatusBar({ zoomLevel, cursorCoords, activeTab }) {
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
           <span className="text-slate-200 font-semibold font-sans">TerraPulse Local Node</span>
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-            {SYSTEM_INFO.version}
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-emerald-400 border border-slate-700">
+            {isLive ? 'FastAPI Connected' : 'Local Standalone'}
           </span>
         </div>
 
@@ -30,14 +34,14 @@ export default function StatusBar({ zoomLevel, cursorCoords, activeTab }) {
         <div className="flex items-center gap-1.5 text-emerald-400">
           <MapPin className="w-3.5 h-3.5" />
           <span className="text-slate-400">Pilot Site:</span>
-          <span className="font-bold">{LOCATION_LOC_001.code}</span>
+          <span className="font-bold">{locId}</span>
         </div>
         <span className="text-slate-700">|</span>
         <div className="text-slate-300">
           {cursorCoords && activeTab === 'map' ? (
             <span>Cursor: {cursorCoords.lat.toFixed(4)}°N, {Math.abs(cursorCoords.lng).toFixed(4)}°W</span>
           ) : (
-            <span>Center: {LOCATION_LOC_001.coordinates.formatted}</span>
+            <span>Center: {formattedCoords}</span>
           )}
         </div>
         {activeTab === 'map' && (
@@ -54,10 +58,10 @@ export default function StatusBar({ zoomLevel, cursorCoords, activeTab }) {
       <div className="flex items-center gap-3">
         <div className="flex items-center gap-1.5">
           <Wifi className="w-3.5 h-3.5 text-emerald-400" />
-          <span className="text-slate-300">Local Bus (115200 baud)</span>
+          <span className="text-slate-300">SQLite Telemetry Stream</span>
         </div>
         <span className="hidden md:inline text-slate-500 font-sans text-[11px]">
-          Ready for Sensor Gateway
+          Port 8000 Ready
         </span>
       </div>
 

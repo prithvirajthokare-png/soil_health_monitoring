@@ -5,17 +5,12 @@ import {
   Minimize2, 
   Plus, 
   Minus, 
-  Compass, 
   Layers, 
-  MapPin, 
-  Crosshair,
-  Sparkles,
-  Info
+  Crosshair
 } from 'lucide-react';
 import LocationMarker from './LocationMarker';
 import LayerControl from './LayerControl';
 import MetricsOverlay from './MetricsOverlay';
-import { LOCATION_LOC_001 } from '../data/mockLocation';
 
 // Helper component for map interaction hooks and events
 function MapController({ center, zoom, onZoomChange, onMouseMoveCoord }) {
@@ -37,10 +32,21 @@ function MapController({ center, zoom, onZoomChange, onMouseMoveCoord }) {
   return null;
 }
 
-export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
-  const loc = LOCATION_LOC_001;
-  const initialCenter = [loc.coordinates.lat, loc.coordinates.lng];
-  const [mapCenter, setMapCenter] = useState(initialCenter);
+export default function MapView({ 
+  locationData, 
+  latestReading, 
+  evaluationData, 
+  isLoading, 
+  onZoomUpdate, 
+  onCoordUpdate, 
+  zoomLevel 
+}) {
+  const lat = locationData?.latitude ?? 13.0094631;
+  const lng = locationData?.longitude ?? 74.7952437;
+  const locId = locationData?.id || 'LOC_001';
+  const locName = locationData?.name || 'Idea Factory';
+
+  const [mapCenter, setMapCenter] = useState([lat, lng]);
   const [currentZoom, setCurrentZoom] = useState(15);
   const [activeLayer, setActiveLayer] = useState('satellite');
   const [showOverlay, setShowOverlay] = useState(true);
@@ -48,6 +54,13 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapInfoBanner, setMapInfoBanner] = useState(true);
   const mapContainerRef = useRef(null);
+
+  // Update map center when live coordinates are loaded from backend
+  useEffect(() => {
+    if (locationData?.latitude && locationData?.longitude) {
+      setMapCenter([locationData.latitude, locationData.longitude]);
+    }
+  }, [locationData?.latitude, locationData?.longitude]);
 
   // Basemap Tile Providers
   const tileProviders = {
@@ -68,7 +81,7 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
   const labelsLayer = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
   const handleRecenter = () => {
-    setMapCenter([...initialCenter]);
+    setMapCenter([lat, lng]);
     setCurrentZoom(15);
   };
 
@@ -100,9 +113,9 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="font-medium">High-Resolution Satellite Imagery Active</span>
+          <span className="font-medium">Satellite GIS Active</span>
           <span className="text-slate-600">|</span>
-          <span className="text-emerald-400 font-mono">1 Marker (LOC_001) Initialized</span>
+          <span className="text-emerald-400 font-mono">{locId} ({locName})</span>
           <button 
             onClick={() => setMapInfoBanner(false)}
             className="text-slate-400 hover:text-slate-200 ml-1 font-bold"
@@ -115,7 +128,7 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
 
       {/* Main Leaflet Map Canvas */}
       <MapContainer
-        center={initialCenter}
+        center={[lat, lng]}
         zoom={currentZoom}
         zoomControl={false}
         attributionControl={false}
@@ -150,8 +163,13 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
           />
         )}
 
-        {/* Placeholder Location Marker LOC_001 */}
-        <LocationMarker showOverlay={showOverlay} />
+        {/* Location Marker LOC_001 */}
+        <LocationMarker 
+          locationData={locationData}
+          latestReading={latestReading}
+          evaluationData={evaluationData}
+          showOverlay={showOverlay} 
+        />
       </MapContainer>
 
       {/* Floating Action Controls on Map (Left / Top-Left) */}
@@ -191,10 +209,10 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
         <button
           onClick={handleRecenter}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 backdrop-blur-md shadow-xl transition-all flex items-center gap-2 text-xs font-medium"
-          title="Center on LOC_001"
+          title={`Center on ${locId}`}
         >
           <Crosshair className="w-4 h-4 text-emerald-400" />
-          <span className="hidden sm:inline">Target LOC_001</span>
+          <span className="hidden sm:inline">Target {locId}</span>
         </button>
       </div>
 
@@ -228,13 +246,19 @@ export default function MapView({ onZoomUpdate, onCoordUpdate, zoomLevel }) {
       {/* Floating Right HUD: Soil Metrics Overlay */}
       <div className="absolute top-4 right-4 bottom-6 z-20 flex items-start justify-end pointer-events-none">
         <div className="pointer-events-auto">
-          <MetricsOverlay onFocusLocation={handleRecenter} />
+          <MetricsOverlay 
+            locationData={locationData}
+            latestReading={latestReading}
+            evaluationData={evaluationData}
+            onFocusLocation={handleRecenter} 
+            isLoading={isLoading}
+          />
         </div>
       </div>
 
       {/* Satellite Imagery Credit Overlay */}
       <div className="absolute bottom-2 right-2 z-10 bg-slate-950/60 backdrop-blur-sm px-2 py-0.5 rounded text-[10px] text-slate-500 font-mono pointer-events-none">
-        Satellite Imagery: Esri / Earthstar / Google Maps Ready
+        Satellite Imagery: Esri / Earthstar / Google Maps Compatible
       </div>
 
     </div>

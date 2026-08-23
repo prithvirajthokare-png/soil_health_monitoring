@@ -1,0 +1,213 @@
+import React from 'react';
+import { Marker, Popup, Circle, Polygon } from 'react-leaflet';
+import L from 'leaflet';
+import { 
+  Sprout, 
+  Droplets, 
+  Thermometer, 
+  TestTube2, 
+  Sparkles, 
+  MapPin, 
+  Activity,
+  Maximize2,
+  Compass,
+  Cpu,
+  Layers
+} from 'lucide-react';
+import { LOCATION_LOC_001 } from '../data/mockLocation';
+
+// Custom DivIcon for LOC_001 with radar pulsing ring
+const createCustomMarkerIcon = () => {
+  return L.divIcon({
+    className: 'custom-soil-marker',
+    html: `
+      <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
+        <!-- Outer Radar Ping Animation -->
+        <span class="absolute w-12 h-12 rounded-full bg-emerald-500/30 marker-radar-ring"></span>
+        <span class="absolute w-8 h-8 rounded-full bg-emerald-400/40 animate-ping"></span>
+        
+        <!-- Center Core Marker -->
+        <div class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-700 via-emerald-500 to-teal-400 text-slate-950 shadow-xl ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-950 cursor-pointer transition-transform hover:scale-110">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-950">
+            <path d="M7 20h10"></path>
+            <path d="M10 20c5.5-2.5.8-6.4 3-10"></path>
+            <path d="M9.5 9.4c1.1.8 1.8 2.2 2.3 3.7-2 .4-3.5.4-4.8-.3-1.2-.6-2.3-1.9-3-4.2 2.8-.5 4.4 0 5.5.8z"></path>
+            <path d="M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z"></path>
+          </svg>
+        </div>
+
+        <!-- Tag Label Floating Above -->
+        <div class="absolute -top-7 whitespace-nowrap bg-slate-900/90 text-emerald-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-500/50 shadow-md backdrop-blur-sm pointer-events-none">
+          LOC_001
+        </div>
+      </div>
+    `,
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+    popupAnchor: [0, -20]
+  });
+};
+
+export default function LocationMarker({ showOverlay }) {
+  const loc = LOCATION_LOC_001;
+  const position = [loc.coordinates.lat, loc.coordinates.lng];
+
+  // Polygon boundary coordinates for Field Alpha (simulated parcel perimeter)
+  const fieldBoundary = [
+    [36.7820, -119.4230],
+    [36.7822, -119.4128],
+    [36.7745, -119.4126],
+    [36.7743, -119.4228]
+  ];
+
+  return (
+    <>
+      {/* Field Alpha Parcel Boundary */}
+      <Polygon 
+        positions={fieldBoundary}
+        pathOptions={{
+          color: '#22c55e',
+          weight: 2,
+          opacity: 0.8,
+          dashArray: '6, 6',
+          fillColor: showOverlay ? '#22c55e' : '#10b981',
+          fillOpacity: showOverlay ? 0.2 : 0.08
+        }}
+      />
+
+      {/* Radar Coverage Radius */}
+      <Circle 
+        center={position} 
+        radius={350} 
+        pathOptions={{
+          color: '#10b981',
+          weight: 1,
+          opacity: 0.4,
+          fillColor: '#10b981',
+          fillOpacity: 0.03
+        }}
+      />
+
+      {/* Main Sensor Hub Marker */}
+      <Marker position={position} icon={createCustomMarkerIcon()}>
+        <Popup maxWidth={360} className="soil-popup">
+          <div className="p-4 bg-slate-900/95 text-slate-100 rounded-xl border border-emerald-500/40 shadow-2xl space-y-3 font-sans">
+            
+            {/* Header */}
+            <div className="flex items-start justify-between gap-2 border-b border-slate-800/80 pb-2.5">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="font-mono font-extrabold text-sm text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-500/40">
+                    {loc.id}
+                  </span>
+                  <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    {loc.healthStatus}
+                  </span>
+                </div>
+                <h2 className="font-bold text-sm text-slate-100 mt-1">{loc.name}</h2>
+                <p className="text-[11px] text-slate-400 flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3 text-slate-500" />
+                  <span>{loc.coordinates.formatted}</span>
+                </p>
+              </div>
+
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Health Index</div>
+                <div className="text-xl font-mono font-bold text-emerald-400">
+                  {loc.healthScore}<span className="text-xs text-slate-400">/100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Metadata Pill Grid */}
+            <div className="grid grid-cols-2 gap-2 text-xs bg-slate-950/60 p-2 rounded-lg border border-slate-800/80">
+              <div>
+                <span className="text-[10px] text-slate-400 block">Soil Classification</span>
+                <span className="font-medium text-slate-200">{loc.soilType}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Target Crop</span>
+                <span className="font-medium text-slate-200">{loc.crop}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Coverage Area</span>
+                <span className="font-medium text-slate-200">{loc.coverageArea}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-400 block">Active Telemetry</span>
+                <span className="font-medium text-emerald-400">{loc.activeNodes} IoT Nodes</span>
+              </div>
+            </div>
+
+            {/* Core Soil Telemetry Metrics */}
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                <span>Real-Time Soil Parameters</span>
+                <span className="text-[10px] text-slate-500 font-mono">15cm Root Depth</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {/* Moisture */}
+                <div className="bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center">
+                  <div className="flex items-center justify-center text-blue-400 mb-1">
+                    <Droplets className="w-4 h-4" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 leading-none">Moisture</div>
+                  <div className="text-sm font-mono font-bold text-blue-300 mt-1">
+                    {loc.metrics.moisture.value}%
+                  </div>
+                  <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
+                </div>
+
+                {/* pH */}
+                <div className="bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center">
+                  <div className="flex items-center justify-center text-purple-400 mb-1">
+                    <TestTube2 className="w-4 h-4" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 leading-none">pH Value</div>
+                  <div className="text-sm font-mono font-bold text-purple-300 mt-1">
+                    {loc.metrics.ph.value}
+                  </div>
+                  <span className="text-[9px] text-emerald-400 font-medium">Neutral</span>
+                </div>
+
+                {/* Temp */}
+                <div className="bg-slate-800/80 p-2 rounded-lg border border-slate-700/60 text-center">
+                  <div className="flex items-center justify-center text-amber-400 mb-1">
+                    <Thermometer className="w-4 h-4" />
+                  </div>
+                  <div className="text-[10px] text-slate-400 leading-none">Soil Temp</div>
+                  <div className="text-sm font-mono font-bold text-amber-300 mt-1">
+                    {loc.metrics.temperature.value}°C
+                  </div>
+                  <span className="text-[9px] text-slate-400 font-medium">Normal</span>
+                </div>
+              </div>
+
+              {/* NPK Summary */}
+              <div className="bg-slate-950/70 p-2 rounded-lg border border-slate-800 text-[11px] flex items-center justify-between">
+                <span className="text-slate-400 font-medium">NPK Nutrient Balance:</span>
+                <div className="flex items-center gap-3 font-mono font-bold">
+                  <span className="text-emerald-400">N: {loc.metrics.npk.nitrogen.value}</span>
+                  <span className="text-cyan-400">P: {loc.metrics.npk.phosphorus.value}</span>
+                  <span className="text-amber-400">K: {loc.metrics.npk.potassium.value}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
+              <span className="flex items-center gap-1">
+                <Activity className="w-3 h-3 text-emerald-400" />
+                <span>Node LOC_001 Synchronized</span>
+              </span>
+              <span className="font-mono text-slate-500">Local Cache</span>
+            </div>
+
+          </div>
+        </Popup>
+      </Marker>
+    </>
+  );
+}

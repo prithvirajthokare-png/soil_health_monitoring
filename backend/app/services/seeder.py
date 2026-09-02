@@ -87,10 +87,9 @@ def seed_crop_library(db: Session) -> int:
 
 def seed_locations_and_telemetry(db: Session):
     """Ingests initial locations from workbook and creates baseline readings."""
-    # 1. Ensure LOC_001 exists
+    # 1. Ensure LOC_001 exists (Idea Factory)
     loc = db.query(Location).filter(Location.id == "LOC_001").first()
     
-    # Try reading from Excel workbook if available
     loc_id = "LOC_001"
     loc_name = "Idea Factory"
     lat = 13.0094631
@@ -104,7 +103,6 @@ def seed_locations_and_telemetry(db: Session):
             wb = openpyxl.load_workbook(LOCATION_WORKBOOK_XLSX)
             if "Locations" in wb.sheetnames:
                 ws = wb["Locations"]
-                # Row 2 contains values
                 r2_id = ws.cell(row=2, column=1).value
                 r2_name = ws.cell(row=2, column=2).value
                 r2_lat = ws.cell(row=2, column=3).value
@@ -148,7 +146,27 @@ def seed_locations_and_telemetry(db: Session):
         db.refresh(loc)
         print(f"[Seeder] Seeded location {loc_id} ({loc_name})")
 
-    # 2. Check if readings exist for LOC_001
+    # 2. Ensure LOC_002 exists (Test Location)
+    loc2 = db.query(Location).filter(Location.id == "LOC_002").first()
+    if not loc2:
+        loc2 = Location(
+            id="LOC_002",
+            name="Test Location",
+            latitude=20.1929232,
+            longitude=76.5352501,
+            current_crop="Unknown / To be provided",
+            growth_stage=1,
+            sensor_id="SN_002",
+            soil_type="Unknown / To be provided",
+            coverage_area="Unknown / To be provided",
+            status="active"
+        )
+        db.add(loc2)
+        db.commit()
+        db.refresh(loc2)
+        print("[Seeder] Seeded test location LOC_002 (Test Location)")
+
+    # 3. Check if readings exist for LOC_001
     existing_readings_count = db.query(SensorReading).filter(SensorReading.location_id == loc_id).count()
     if existing_readings_count == 0:
         print(f"[Seeder] Generating 24-hour historical baseline telemetry for {loc_id}...")
@@ -157,7 +175,6 @@ def seed_locations_and_telemetry(db: Session):
         # Target metrics for tomato stage 1 (vegetative): N~53.8, P~28, K~103, pH~6.5, EC~1.2, Moisture~27%
         for i in range(48, -1, -1):
             t = now - timedelta(minutes=i * 30)
-            # Add subtle diurnal variation
             diurnal_wave = math.sin(i * 0.2)
             moisture = round(27.4 + diurnal_wave * 1.5 - (i * 0.02), 2)
             temp = round(21.5 + diurnal_wave * 2.8, 2)

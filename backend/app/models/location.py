@@ -7,7 +7,7 @@ class Location(Base):
     __tablename__ = "locations"
 
     id = Column(String(50), primary_key=True, index=True) # e.g. "LOC_001"
-    name = Column(String(150), nullable=False)           # e.g. "Idea Factory" / "Field Alpha"
+    name = Column(String(150), nullable=False)           # e.g. "Idea Factory"
     latitude = Column(Float, nullable=False)             # 13.0094631
     longitude = Column(Float, nullable=False)            # 74.7952437
     current_crop = Column(String(100), default="tomato") # e.g. "tomato"

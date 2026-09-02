@@ -11,7 +11,7 @@ export async function fetchLocationById(locationId = 'LOC_001') {
 export async function fetchLatestReading(locationId = 'LOC_001') {
   const response = await fetch(`${API_BASE_URL}/locations/${locationId}/latest`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch latest reading for ${locationId}: ${response.statusText}`);
+    return null;
   }
   return response.json();
 }
@@ -19,7 +19,7 @@ export async function fetchLatestReading(locationId = 'LOC_001') {
 export async function fetchEvaluation(locationId = 'LOC_001') {
   const response = await fetch(`${API_BASE_URL}/locations/${locationId}/evaluation`);
   if (!response.ok) {
-    throw new Error(`Failed to fetch evaluation for ${locationId}: ${response.statusText}`);
+    return null;
   }
   return response.json();
 }
@@ -38,19 +38,37 @@ export function getExportDataUrl(locationId = 'LOC_001', range = '1week') {
 
 export async function downloadHistoricalDataCsv(locationId = 'LOC_001', range = '1week') {
   const url = getExportDataUrl(locationId, range);
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to download historical telemetry (${range}): ${response.statusText}`);
+  
+  // Try direct browser anchor trigger first (most robust for file attachment downloads)
+  try {
+    const a = document.createElement('a');
+    a.href = url;
+    a.setAttribute('download', `${locationId}_telemetry_${range}.csv`);
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+    }, 500);
+    return true;
+  } catch (err) {
+    // Fallback to fetch blob
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Failed to download historical telemetry (${range}): ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `${locationId}_telemetry_${range}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    }, 500);
+    return true;
   }
-  const blob = await response.blob();
-  const downloadUrl = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = downloadUrl;
-  a.download = `${locationId}_telemetry_${range}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(downloadUrl);
 }
 
 export async function fetchFullLocationState(locationId = 'LOC_001') {

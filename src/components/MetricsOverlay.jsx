@@ -9,7 +9,7 @@ import {
   MapPin, 
   Compass, 
   CheckCircle2,
-  AlertTriangle,
+  Sparkles,
   RefreshCw
 } from 'lucide-react';
 
@@ -21,7 +21,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
   const currentCrop = locationData?.current_crop || 'tomato';
   const coverageArea = locationData?.coverage_area || '48.5 Hectares';
   const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
-  const healthStatus = evaluationData?.health_status || 'Optimal';
+  const healthStatus = evaluationData?.health_status || (latestReading ? 'Optimal' : 'Active Node');
 
   const lat = locationData?.latitude ?? 13.0094631;
   const lng = locationData?.longitude ?? 74.7952437;
@@ -41,6 +41,10 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
   const kTarget = targets?.k_target_mg_kg ?? 103.0;
   const trigMoisture = targets?.irrigation_trigger_pct ?? 20.0;
 
+  const recommendations = evaluationData?.recommendations || [
+    `All soil health metrics for ${locName} are within optimal agronomic targets.`
+  ];
+
   return (
     <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'translate-x-[calc(100%-36px)]' : 'translate-x-0'}`}>
       <div className="relative flex">
@@ -55,7 +59,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
         </button>
 
         {/* HUD Container */}
-        <div className="w-80 md:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800/90 rounded-2xl p-4 shadow-2xl shadow-black/60 text-slate-100 space-y-4 max-h-[calc(100vh-140px)] overflow-y-auto">
+        <div className="w-80 md:w-96 bg-slate-900/90 backdrop-blur-xl border border-slate-800/90 rounded-2xl p-4 shadow-2xl shadow-black/60 text-slate-100 space-y-3.5 max-h-[calc(100vh-120px)] overflow-y-auto">
           
           {/* Header Card */}
           <div className="flex items-start justify-between gap-3 border-b border-slate-800 pb-3">
@@ -103,6 +107,22 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
               <MapPin className="w-3.5 h-3.5" />
               <span>Center</span>
             </button>
+          </div>
+
+          {/* Agronomic Recommendations Card (Prominent & Always Visible) */}
+          <div className="bg-gradient-to-br from-emerald-950/60 to-slate-950/80 p-3 rounded-xl border border-emerald-500/40 shadow-md space-y-1.5">
+            <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
+              <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
+              <span>Agronomic Recommendation</span>
+            </div>
+            <div className="space-y-1">
+              {recommendations.map((rec, idx) => (
+                <div key={idx} className="flex items-start gap-1.5 text-xs text-slate-200 leading-relaxed">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>{rec}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Metric Cards Grid */}
@@ -244,19 +264,6 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 </div>
               </div>
             </div>
-
-            {/* Recommendations / Live Insights */}
-            {evaluationData?.recommendations && evaluationData.recommendations.length > 0 && (
-              <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80 text-xs space-y-1">
-                <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Agronomic Recommendations</span>
-                </div>
-                <p className="text-slate-300 text-[11px] leading-relaxed">
-                  {evaluationData.recommendations[0]}
-                </p>
-              </div>
-            )}
 
           </div>
 

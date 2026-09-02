@@ -47,10 +47,11 @@ def create_app() -> FastAPI:
     # CORS Middleware to allow React frontend on port 5173
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=ALLOWED_ORIGINS,
-        allow_credentials=True,
+        allow_origins=["*"],
+        allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["*"],
     )
 
     # Mount API Router

@@ -6,21 +6,34 @@ import {
   Thermometer, 
   TestTube2, 
   MapPin, 
-  Activity
+  Activity,
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 
-// Custom DivIcon for LOC_001 with radar pulsing ring
-const createCustomMarkerIcon = (code = 'LOC_001') => {
+// Custom DivIcon for LOC markers with radar pulsing ring
+const createCustomMarkerIcon = (code = 'LOC_001', isSelected = true) => {
+  const isPrimary = code === 'LOC_001';
+  const colorGrad = isSelected 
+    ? (isPrimary ? 'from-emerald-700 via-emerald-500 to-teal-400' : 'from-cyan-700 via-cyan-500 to-blue-400')
+    : 'from-slate-700 via-slate-600 to-slate-500';
+
+  const ringColor = isSelected 
+    ? (isPrimary ? 'bg-emerald-500/30' : 'bg-cyan-500/30')
+    : 'bg-slate-500/20';
+
+  const badgeColor = isPrimary ? 'text-emerald-400 border-emerald-500/50' : 'text-cyan-300 border-cyan-500/50';
+
   return L.divIcon({
-    className: 'custom-soil-marker',
+    className: `custom-soil-marker ${isSelected ? 'marker-selected' : 'marker-inactive'}`,
     html: `
       <div class="relative flex items-center justify-center -translate-x-1/2 -translate-y-1/2">
-        <!-- Outer Radar Ping Animation -->
-        <span class="absolute w-12 h-12 rounded-full bg-emerald-500/30 marker-radar-ring"></span>
-        <span class="absolute w-8 h-8 rounded-full bg-emerald-400/40 animate-ping"></span>
+        ${isSelected ? `
+          <span class="absolute w-12 h-12 rounded-full ${ringColor} marker-radar-ring"></span>
+          <span class="absolute w-8 h-8 rounded-full ${ringColor} animate-ping"></span>
+        ` : ''}
         
-        <!-- Center Core Marker -->
-        <div class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-700 via-emerald-500 to-teal-400 text-slate-950 shadow-xl ring-2 ring-emerald-300 ring-offset-2 ring-offset-slate-950 cursor-pointer transition-transform hover:scale-110">
+        <div class="relative z-10 flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-tr ${colorGrad} text-slate-950 shadow-xl ring-2 ${isSelected ? 'ring-emerald-300' : 'ring-slate-400'} ring-offset-2 ring-offset-slate-950 cursor-pointer transition-transform hover:scale-125">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-slate-950">
             <path d="M7 20h10"></path>
             <path d="M10 20c5.5-2.5.8-6.4 3-10"></path>
@@ -29,8 +42,7 @@ const createCustomMarkerIcon = (code = 'LOC_001') => {
           </svg>
         </div>
 
-        <!-- Tag Label Floating Above -->
-        <div class="absolute -top-7 whitespace-nowrap bg-slate-900/90 text-emerald-400 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border border-emerald-500/50 shadow-md backdrop-blur-sm pointer-events-none">
+        <div class="absolute -top-7 whitespace-nowrap bg-slate-900/90 ${badgeColor} text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-md backdrop-blur-sm pointer-events-none">
           ${code}
         </div>
       </div>
@@ -41,7 +53,14 @@ const createCustomMarkerIcon = (code = 'LOC_001') => {
   });
 };
 
-export default function LocationMarker({ locationData, latestReading, evaluationData, showOverlay }) {
+export default function LocationMarker({ 
+  locationData, 
+  latestReading, 
+  evaluationData, 
+  showOverlay, 
+  isSelected = true,
+  onSelect 
+}) {
   const lat = locationData?.latitude ?? 13.0094631;
   const lng = locationData?.longitude ?? 74.7952437;
   const position = [lat, lng];
@@ -53,7 +72,7 @@ export default function LocationMarker({ locationData, latestReading, evaluation
   const coverageArea = locationData?.coverage_area || '48.5 Hectares';
   
   const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
-  const healthStatus = evaluationData?.health_status || 'Optimal';
+  const healthStatus = evaluationData?.health_status || (latestReading ? 'Optimal' : 'Active Node');
 
   const moistureVal = latestReading?.moisture_pct ?? 27.4;
   const phVal = latestReading?.ph ?? 6.78;
@@ -61,8 +80,8 @@ export default function LocationMarker({ locationData, latestReading, evaluation
   const nVal = latestReading?.nitrogen_mg_kg ?? 52.5;
   const pVal = latestReading?.phosphorus_mg_kg ?? 27.5;
   const kVal = latestReading?.potassium_mg_kg ?? 104.0;
-  const ecVal = latestReading?.ec_ds_m ?? 1.18;
 
+  const recommendation = evaluationData?.recommendations?.[0] || 'All soil health metrics are within optimal agronomic targets.';
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
 
   // Parcel boundary coordinates around dynamic location
@@ -73,36 +92,52 @@ export default function LocationMarker({ locationData, latestReading, evaluation
     [lat - 0.0037, lng - 0.0042]
   ];
 
+  const handleMarkerClick = () => {
+    if (onSelect) {
+      onSelect(locId);
+    }
+  };
+
   return (
     <>
-      {/* Parcel Boundary */}
-      <Polygon 
-        positions={fieldBoundary}
-        pathOptions={{
-          color: '#22c55e',
-          weight: 2,
-          opacity: 0.8,
-          dashArray: '6, 6',
-          fillColor: showOverlay ? '#22c55e' : '#10b981',
-          fillOpacity: showOverlay ? 0.2 : 0.08
-        }}
-      />
+      {/* Parcel Boundary (shown when selected) */}
+      {isSelected && (
+        <Polygon 
+          positions={fieldBoundary}
+          pathOptions={{
+            color: locId === 'LOC_001' ? '#22c55e' : '#06b6d4',
+            weight: 2,
+            opacity: 0.8,
+            dashArray: '6, 6',
+            fillColor: showOverlay ? (locId === 'LOC_001' ? '#22c55e' : '#06b6d4') : '#10b981',
+            fillOpacity: showOverlay ? 0.2 : 0.08
+          }}
+        />
+      )}
 
-      {/* Radar Coverage Radius */}
-      <Circle 
-        center={position} 
-        radius={350} 
-        pathOptions={{
-          color: '#10b981',
-          weight: 1,
-          opacity: 0.4,
-          fillColor: '#10b981',
-          fillOpacity: 0.03
-        }}
-      />
+      {/* Coverage Radius */}
+      {isSelected && (
+        <Circle 
+          center={position} 
+          radius={350} 
+          pathOptions={{
+            color: locId === 'LOC_001' ? '#10b981' : '#06b6d4',
+            weight: 1,
+            opacity: 0.4,
+            fillColor: locId === 'LOC_001' ? '#10b981' : '#06b6d4',
+            fillOpacity: 0.03
+          }}
+        />
+      )}
 
       {/* Main Sensor Hub Marker */}
-      <Marker position={position} icon={createCustomMarkerIcon(locId)}>
+      <Marker 
+        position={position} 
+        icon={createCustomMarkerIcon(locId, isSelected)}
+        eventHandlers={{
+          click: handleMarkerClick
+        }}
+      >
         <Popup maxWidth={360} className="soil-popup">
           <div className="p-4 bg-slate-900/95 text-slate-100 rounded-xl border border-emerald-500/40 shadow-2xl space-y-3 font-sans">
             
@@ -209,11 +244,22 @@ export default function LocationMarker({ locationData, latestReading, evaluation
               </div>
             </div>
 
+            {/* Live Agronomic Recommendation */}
+            <div className="bg-emerald-950/40 p-2.5 rounded-lg border border-emerald-500/30 text-xs space-y-1">
+              <div className="text-[11px] font-semibold text-emerald-400 flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Agronomic Recommendation</span>
+              </div>
+              <p className="text-slate-200 text-[11px] leading-relaxed">
+                {recommendation}
+              </p>
+            </div>
+
             {/* Footer */}
             <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
               <span className="flex items-center gap-1">
                 <Activity className="w-3 h-3 text-emerald-400" />
-                <span>Node {locId} Synchronized</span>
+                <span>Node {locId} Active</span>
               </span>
               <span className="font-mono text-emerald-400">Backend Live</span>
             </div>

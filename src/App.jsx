@@ -3,13 +3,20 @@ import Navbar from './components/Navbar';
 import MapView from './components/MapView';
 import TeamProjectView from './components/TeamProjectView';
 import StatusBar from './components/StatusBar';
-import { fetchFullLocationState } from './services/api';
+import { fetchFullLocationState, fetchAllLocations } from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('map'); // 'map' | 'team'
   const [zoomLevel, setZoomLevel] = useState(15);
   const [cursorCoords, setCursorCoords] = useState(null);
   const [activeLayer, setActiveLayer] = useState('satellite');
+
+  // Multi-location State
+  const [selectedLocationId, setSelectedLocationId] = useState('LOC_001');
+  const [locationsList, setLocationsList] = useState([
+    { id: 'LOC_001', name: 'Idea Factory', latitude: 13.0094631, longitude: 74.7952437 },
+    { id: 'LOC_002', name: 'Test Location', latitude: 20.1929232, longitude: 76.5352501 }
+  ]);
 
   // Backend Live State
   const [locationData, setLocationData] = useState(null);
@@ -20,7 +27,20 @@ export default function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [apiError, setApiError] = useState(null);
 
-  const loadData = useCallback(async (isManual = false) => {
+  // Fetch all available locations from backend
+  const loadLocationsList = useCallback(async () => {
+    try {
+      const locs = await fetchAllLocations();
+      if (Array.isArray(locs) && locs.length > 0) {
+        setLocationsList(locs);
+      }
+    } catch (err) {
+      console.warn('[App] Could not fetch locations list, using fallback:', err);
+    }
+  }, []);
+
+  // Fetch telemetry and evaluation for selected location
+  const loadData = useCallback(async (locationId = selectedLocationId, isManual = false) => {
     if (isManual) {
       setIsRefreshing(true);
     } else {
@@ -28,7 +48,7 @@ export default function App() {
     }
     
     try {
-      const state = await fetchFullLocationState('LOC_001');
+      const state = await fetchFullLocationState(locationId);
       if (state.location) {
         setLocationData(state.location);
         setLatestReading(state.latest);
@@ -45,18 +65,29 @@ export default function App() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, []);
+  }, [selectedLocationId]);
 
   useEffect(() => {
-    loadData(false);
-  }, [loadData]);
+    loadLocationsList();
+  }, [loadLocationsList]);
+
+  useEffect(() => {
+    loadData(selectedLocationId, false);
+  }, [selectedLocationId, loadData]);
+
+  const handleSelectLocation = (locId) => {
+    setSelectedLocationId(locId);
+    if (activeTab !== 'map') {
+      setActiveTab('map');
+    }
+  };
 
   const handleResetView = () => {
     if (activeTab !== 'map') {
       setActiveTab('map');
     }
     setTimeout(() => {
-      const recenterBtn = document.querySelector('[title="Center on LOC_001"], [title^="Center on"]');
+      const recenterBtn = document.querySelector(`[title^="Center on"], [title^="Target"]`);
       if (recenterBtn) {
         recenterBtn.click();
       }
@@ -68,9 +99,15 @@ export default function App() {
       {/* Top Navbar */}
       <Navbar 
         locationData={locationData}
+        locationsList={locationsList}
+        selectedLocationId={selectedLocationId}
+        onSelectLocation={handleSelectLocation}
         isLive={isLive}
         isRefreshing={isRefreshing}
-        onRefresh={() => loadData(true)}
+        onRefresh={() => {
+          loadLocationsList();
+          loadData(selectedLocationId, true);
+        }}
         onResetView={handleResetView} 
         activeLayer={activeLayer}
         setActiveLayer={setActiveLayer}
@@ -83,6 +120,9 @@ export default function App() {
         {activeTab === 'map' ? (
           <MapView 
             locationData={locationData}
+            locationsList={locationsList}
+            selectedLocationId={selectedLocationId}
+            onSelectLocation={handleSelectLocation}
             latestReading={latestReading}
             evaluationData={evaluationData}
             isLoading={isLoading || isRefreshing}

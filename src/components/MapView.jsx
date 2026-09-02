@@ -6,19 +6,25 @@ import {
   Plus, 
   Minus, 
   Layers, 
-  Crosshair
+  Crosshair,
+  MapPin,
+  Globe2
 } from 'lucide-react';
 import LocationMarker from './LocationMarker';
 import LayerControl from './LayerControl';
 import MetricsOverlay from './MetricsOverlay';
 
 // Helper component for map interaction hooks and events
-function MapController({ center, zoom, onZoomChange, onMouseMoveCoord }) {
+function MapController({ center, zoom, boundsToFit, onZoomChange, onMouseMoveCoord }) {
   const map = useMap();
 
   useEffect(() => {
-    map.flyTo(center, zoom, { duration: 1.2 });
-  }, [center, zoom, map]);
+    if (boundsToFit && boundsToFit.length >= 2) {
+      map.fitBounds(boundsToFit, { padding: [50, 50], duration: 1.2 });
+    } else if (center && center[0] && center[1]) {
+      map.flyTo(center, zoom, { duration: 1.2 });
+    }
+  }, [center, zoom, boundsToFit, map]);
 
   useMapEvents({
     zoomend() {
@@ -34,6 +40,9 @@ function MapController({ center, zoom, onZoomChange, onMouseMoveCoord }) {
 
 export default function MapView({ 
   locationData, 
+  locationsList = [],
+  selectedLocationId = 'LOC_001',
+  onSelectLocation,
   latestReading, 
   evaluationData, 
   isLoading, 
@@ -43,24 +52,28 @@ export default function MapView({
 }) {
   const lat = locationData?.latitude ?? 13.0094631;
   const lng = locationData?.longitude ?? 74.7952437;
-  const locId = locationData?.id || 'LOC_001';
-  const locName = locationData?.name || 'Idea Factory';
+  const locId = locationData?.id || selectedLocationId;
+  const locName = locationData?.name || (locId === 'LOC_001' ? 'Idea Factory' : 'Test Location');
 
   const [mapCenter, setMapCenter] = useState([lat, lng]);
   const [currentZoom, setCurrentZoom] = useState(15);
+  const [boundsToFit, setBoundsToFit] = useState(null);
   const [activeLayer, setActiveLayer] = useState('satellite');
   const [showOverlay, setShowOverlay] = useState(true);
   const [showLayerPanel, setShowLayerPanel] = useState(false);
+  const [showLocationsPanel, setShowLocationsPanel] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapInfoBanner, setMapInfoBanner] = useState(true);
   const mapContainerRef = useRef(null);
 
-  // Update map center when live coordinates are loaded from backend
+  // Update map center when active location changes
   useEffect(() => {
     if (locationData?.latitude && locationData?.longitude) {
+      setBoundsToFit(null);
       setMapCenter([locationData.latitude, locationData.longitude]);
+      setCurrentZoom(15);
     }
-  }, [locationData?.latitude, locationData?.longitude]);
+  }, [locationData?.latitude, locationData?.longitude, selectedLocationId]);
 
   // Basemap Tile Providers
   const tileProviders = {
@@ -81,6 +94,7 @@ export default function MapView({
   const labelsLayer = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
   const handleRecenter = () => {
+    setBoundsToFit(null);
     setMapCenter([lat, lng]);
     setCurrentZoom(15);
   };
@@ -103,10 +117,22 @@ export default function MapView({
     }
   };
 
+  // Build list of markers to render (from backend locations list or fallback)
+  const markersToRender = locationsList.length > 0 ? locationsList : [
+    locationData || { id: 'LOC_001', name: 'Idea Factory', latitude: 13.0094631, longitude: 74.7952437 },
+    { id: 'LOC_002', name: 'Test Location', latitude: 20.1929232, longitude: 76.5352501 }
+  ];
+
+  const handleFitAllLocations = () => {
+    const bounds = markersToRender.map(m => [m.latitude, m.longitude]);
+    setBoundsToFit(bounds);
+    setShowLocationsPanel(false);
+  };
+
   return (
     <div ref={mapContainerRef} className="relative flex-1 w-full h-full overflow-hidden bg-slate-950">
       
-      {/* Top Banner Notice (Satellite Map Ready) */}
+      {/* Top Banner Notice (Satellite Map Active) */}
       {mapInfoBanner && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 text-slate-200 px-3.5 py-1.5 rounded-full shadow-xl flex items-center gap-2.5 text-xs">
           <span className="flex h-2 w-2 relative">
@@ -116,6 +142,8 @@ export default function MapView({
           <span className="font-medium">Satellite GIS Active</span>
           <span className="text-slate-600">|</span>
           <span className="text-emerald-400 font-mono">{locId} ({locName})</span>
+          <span className="text-slate-600">|</span>
+          <span className="text-slate-400 font-mono text-[11px]">{markersToRender.length} Monitored Sites</span>
           <button 
             onClick={() => setMapInfoBanner(false)}
             className="text-slate-400 hover:text-slate-200 ml-1 font-bold"
@@ -137,6 +165,7 @@ export default function MapView({
         <MapController 
           center={mapCenter} 
           zoom={currentZoom} 
+          boundsToFit={boundsToFit}
           onZoomChange={(z) => {
             setCurrentZoom(z);
             onZoomUpdate?.(z);
@@ -163,21 +192,98 @@ export default function MapView({
           />
         )}
 
-        {/* Location Marker LOC_001 */}
-        <LocationMarker 
-          locationData={locationData}
-          latestReading={latestReading}
-          evaluationData={evaluationData}
-          showOverlay={showOverlay} 
-        />
+        {/* Render Location Markers on Map */}
+        {markersToRender.map((loc) => {
+          const isSelected = loc.id === locId;
+          return (
+            <LocationMarker 
+              key={loc.id}
+              locationData={isSelected ? locationData || loc : loc}
+              latestReading={isSelected ? latestReading : null}
+              evaluationData={isSelected ? evaluationData : null}
+              showOverlay={showOverlay} 
+              isSelected={isSelected}
+              onSelect={onSelectLocation}
+            />
+          );
+        })}
       </MapContainer>
 
       {/* Floating Action Controls on Map (Left / Top-Left) */}
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+        
+        {/* Sites / Locations Switcher on Map */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              setShowLocationsPanel(!showLocationsPanel);
+              setShowLayerPanel(false);
+            }}
+            className={`p-2.5 rounded-xl backdrop-blur-md border shadow-xl flex items-center gap-2 text-xs font-semibold transition-all ${
+              showLocationsPanel 
+                ? 'bg-emerald-600 text-white border-emerald-400 shadow-emerald-900/30' 
+                : 'bg-slate-900/90 hover:bg-slate-800 text-slate-200 border-slate-700/80'
+            }`}
+            title="Switch Monitored Locations"
+          >
+            <MapPin className="w-4 h-4 text-emerald-400" />
+            <span>Sites ({markersToRender.length})</span>
+          </button>
+
+          {/* Locations Dropdown on Map */}
+          {showLocationsPanel && (
+            <div className="absolute top-12 left-0 w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-2 z-30 text-xs space-y-1">
+              <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800 flex justify-between items-center">
+                <span>Monitored Locations</span>
+                <span className="font-mono text-emerald-400">{locId}</span>
+              </div>
+              
+              {markersToRender.map((l) => (
+                <button
+                  key={l.id}
+                  onClick={() => {
+                    onSelectLocation?.(l.id);
+                    setShowLocationsPanel(false);
+                  }}
+                  className={`w-full text-left p-2 rounded-lg transition-colors flex items-center justify-between ${
+                    l.id === locId 
+                      ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/40' 
+                      : 'hover:bg-slate-800 text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2 h-2 rounded-full ${l.id === locId ? 'bg-emerald-400' : 'bg-slate-500'}`}></span>
+                    <div>
+                      <div className="font-bold font-mono text-slate-100">{l.id}</div>
+                      <div className="text-[11px] text-slate-400">{l.name}</div>
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400">
+                    {l.id === 'LOC_001' ? 'Real Site' : 'Test Node'}
+                  </span>
+                </button>
+              ))}
+
+              <div className="pt-1 border-t border-slate-800">
+                <button
+                  onClick={handleFitAllLocations}
+                  className="w-full text-left p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors flex items-center gap-2 text-[11px]"
+                >
+                  <Globe2 className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>Show All Sites (Fit Map)</span>
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Layer Toggle Button */}
         <div className="relative">
           <button
-            onClick={() => setShowLayerPanel(!showLayerPanel)}
+            onClick={() => {
+              setShowLayerPanel(!showLayerPanel);
+              setShowLocationsPanel(false);
+            }}
             className={`p-2.5 rounded-xl backdrop-blur-md border shadow-xl flex items-center gap-2 text-xs font-semibold transition-all ${
               showLayerPanel 
                 ? 'bg-emerald-600 text-white border-emerald-400 shadow-emerald-900/30' 
@@ -205,11 +311,11 @@ export default function MapView({
           )}
         </div>
 
-        {/* Recenter Quick Button */}
+        {/* Recenter Quick Button for Active Location */}
         <button
           onClick={handleRecenter}
           className="p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 border border-slate-700/80 backdrop-blur-md shadow-xl transition-all flex items-center gap-2 text-xs font-medium"
-          title={`Center on ${locId}`}
+          title={`Center on ${locId} (${locName})`}
         >
           <Crosshair className="w-4 h-4 text-emerald-400" />
           <span className="hidden sm:inline">Target {locId}</span>

@@ -16,6 +16,14 @@ from backend.app.schemas.reading import (
 
 router = APIRouter(prefix="/locations/{location_id}", tags=["Sensor Readings & Telemetry"])
 
+def _to_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    """Ensures datetime is offset-naive UTC for consistent arithmetic with SQLite datetimes."""
+    if dt is None:
+        return None
+    if dt.tzinfo is not None:
+        return dt.astimezone(timezone.utc).replace(tzinfo=None)
+    return dt
+
 @router.get("/latest", response_model=SensorReadingResponse)
 def get_latest_reading(location_id: str, db: Session = Depends(get_db)):
     """Retrieve the most recent real-time sensor reading for a given field location."""
@@ -44,7 +52,21 @@ def get_reading_history(
     if not loc:
         raise HTTPException(status_code=404, detail=f"Location '{location_id}' not found.")
 
-    since_time = datetime.now(timezone.utc) - timedelta(hours=hours)
+    latest_reading = db.query(SensorReading).filter(
+        SensorReading.location_id == location_id
+    ).order_by(SensorReading.timestamp.desc()).first()
+
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if latest_reading and latest_reading.timestamp:
+        latest_ts = _to_naive_utc(latest_reading.timestamp)
+        if (now_utc - latest_ts).total_seconds() > (hours * 3600):
+            ref_time = latest_ts
+        else:
+            ref_time = now_utc
+    else:
+        ref_time = now_utc
+
+    since_time = ref_time - timedelta(hours=hours)
 
     readings = db.query(SensorReading).filter(
         SensorReading.location_id == location_id,
@@ -84,7 +106,21 @@ def export_historical_telemetry_csv(
         days_count = 7
         range_label = "1week"
 
-    since_time = datetime.now(timezone.utc) - timedelta(days=days_count)
+    latest_reading = db.query(SensorReading).filter(
+        SensorReading.location_id == location_id
+    ).order_by(SensorReading.timestamp.desc()).first()
+
+    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+    if latest_reading and latest_reading.timestamp:
+        latest_ts = _to_naive_utc(latest_reading.timestamp)
+        if (now_utc - latest_ts).days > days_count:
+            ref_time = latest_ts
+        else:
+            ref_time = now_utc
+    else:
+        ref_time = now_utc
+
+    since_time = ref_time - timedelta(days=days_count)
 
     readings = db.query(SensorReading).filter(
         SensorReading.location_id == location_id,
@@ -134,7 +170,8 @@ def export_historical_telemetry_csv(
         media_type="text/csv",
         headers={
             "Content-Disposition": f"attachment; filename=\"{filename}\"",
-            "Cache-Control": "no-cache"
+            "Cache-Control": "no-cache",
+            "Access-Control-Expose-Headers": "Content-Disposition"
         }
     )
 

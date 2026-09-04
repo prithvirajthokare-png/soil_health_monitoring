@@ -1,5 +1,6 @@
 import io
 import csv
+import logging
 from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
@@ -14,6 +15,7 @@ from backend.app.schemas.reading import (
     SensorReadingBatchCreate
 )
 
+logger = logging.getLogger("uvicorn.error")
 router = APIRouter(prefix="/locations/{location_id}", tags=["Sensor Readings & Telemetry"])
 
 def _to_naive_utc(dt: Optional[datetime]) -> Optional[datetime]:
@@ -88,92 +90,101 @@ def export_historical_telemetry_csv(
     - 1month (30 days)
     - 1year (365 days)
     """
-    loc = db.query(Location).filter(Location.id == location_id).first()
-    if not loc:
-        raise HTTPException(status_code=404, detail=f"Location '{location_id}' not found.")
+    try:
+        loc = db.query(Location).filter(Location.id == location_id).first()
+        if not loc:
+            raise HTTPException(status_code=404, detail=f"Location '{location_id}' not found.")
 
-    range_clean = range.lower().strip()
-    if range_clean in ["1week", "7d", "week"]:
-        days_count = 7
-        range_label = "1week"
-    elif range_clean in ["1month", "30d", "month"]:
-        days_count = 30
-        range_label = "1month"
-    elif range_clean in ["1year", "365d", "year"]:
-        days_count = 365
-        range_label = "1year"
-    else:
-        days_count = 7
-        range_label = "1week"
+        range_clean = range.lower().strip()
+        if range_clean in ["1week", "7d", "week"]:
+            days_count = 7
+            range_label = "1week"
+        elif range_clean in ["1month", "30d", "month"]:
+            days_count = 30
+            range_label = "1month"
+        elif range_clean in ["1year", "365d", "year"]:
+            days_count = 365
+            range_label = "1year"
+        else:
+            days_count = 7
+            range_label = "1week"
 
-    latest_reading = db.query(SensorReading).filter(
-        SensorReading.location_id == location_id
-    ).order_by(SensorReading.timestamp.desc()).first()
+        latest_reading = db.query(SensorReading).filter(
+            SensorReading.location_id == location_id
+        ).order_by(SensorReading.timestamp.desc()).first()
 
-    now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-    if latest_reading and latest_reading.timestamp:
-        latest_ts = _to_naive_utc(latest_reading.timestamp)
-        if (now_utc - latest_ts).days > days_count:
-            ref_time = latest_ts
+        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+        if latest_reading and latest_reading.timestamp:
+            latest_ts = _to_naive_utc(latest_reading.timestamp)
+            if (now_utc - latest_ts).days > days_count:
+                ref_time = latest_ts
+            else:
+                ref_time = now_utc
         else:
             ref_time = now_utc
-    else:
-        ref_time = now_utc
 
-    since_time = ref_time - timedelta(days=days_count)
+        since_time = ref_time - timedelta(days=days_count)
 
-    readings = db.query(SensorReading).filter(
-        SensorReading.location_id == location_id,
-        SensorReading.timestamp >= since_time
-    ).order_by(SensorReading.timestamp.asc()).all()
+        readings = db.query(SensorReading).filter(
+            SensorReading.location_id == location_id,
+            SensorReading.timestamp >= since_time
+        ).order_by(SensorReading.timestamp.asc()).all()
 
-    output = io.StringIO()
-    writer = csv.writer(output)
-    
-    # Standard CSV Header
-    writer.writerow([
-        "Timestamp (UTC)",
-        "Location ID",
-        "Location Name",
-        "Sensor ID",
-        "Moisture (%)",
-        "Soil Temperature (°C)",
-        "Soil pH",
-        "Electrical Conductivity (dS/m)",
-        "Nitrogen (mg/kg)",
-        "Phosphorus (mg/kg)",
-        "Potassium (mg/kg)",
-        "Battery (%)"
-    ])
-
-    for r in readings:
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Standard CSV Header
         writer.writerow([
-            r.timestamp.isoformat() if r.timestamp else "",
-            r.location_id,
-            loc.name,
-            r.sensor_id or "",
-            round(r.moisture_pct, 2) if r.moisture_pct is not None else "",
-            round(r.temperature_c, 2) if r.temperature_c is not None else "",
-            round(r.ph, 2) if r.ph is not None else "",
-            round(r.ec_ds_m, 2) if r.ec_ds_m is not None else "",
-            round(r.nitrogen_mg_kg, 2) if r.nitrogen_mg_kg is not None else "",
-            round(r.phosphorus_mg_kg, 2) if r.phosphorus_mg_kg is not None else "",
-            round(r.potassium_mg_kg, 2) if r.potassium_mg_kg is not None else "",
-            round(r.battery_pct, 1) if r.battery_pct is not None else ""
+            "Timestamp (UTC)",
+            "Location ID",
+            "Location Name",
+            "Sensor ID",
+            "Moisture (%)",
+            "Soil Temperature (°C)",
+            "Soil pH",
+            "Electrical Conductivity (dS/m)",
+            "Nitrogen (mg/kg)",
+            "Phosphorus (mg/kg)",
+            "Potassium (mg/kg)",
+            "Battery (%)"
         ])
 
-    csv_content = output.getvalue()
-    filename = f"{location_id}_telemetry_{range_label}.csv"
+        for r in readings:
+            writer.writerow([
+                r.timestamp.isoformat() if r.timestamp else "",
+                r.location_id,
+                loc.name,
+                r.sensor_id or "",
+                round(r.moisture_pct, 2) if r.moisture_pct is not None else "",
+                round(r.temperature_c, 2) if r.temperature_c is not None else "",
+                round(r.ph, 2) if r.ph is not None else "",
+                round(r.ec_ds_m, 2) if r.ec_ds_m is not None else "",
+                round(r.nitrogen_mg_kg, 2) if r.nitrogen_mg_kg is not None else "",
+                round(r.phosphorus_mg_kg, 2) if r.phosphorus_mg_kg is not None else "",
+                round(r.potassium_mg_kg, 2) if r.potassium_mg_kg is not None else "",
+                round(r.battery_pct, 1) if r.battery_pct is not None else ""
+            ])
 
-    return Response(
-        content=csv_content,
-        media_type="text/csv",
-        headers={
-            "Content-Disposition": f"attachment; filename=\"{filename}\"",
-            "Cache-Control": "no-cache",
-            "Access-Control-Expose-Headers": "Content-Disposition"
-        }
-    )
+        csv_content = output.getvalue()
+        filename = f"{location_id}_telemetry_{range_label}.csv"
+
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=\"{filename}\"",
+                "Cache-Control": "no-cache",
+                "Access-Control-Expose-Headers": "Content-Disposition"
+            }
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"[Export Error] Exception generating CSV for location '{location_id}': {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to generate telemetry CSV export: {str(e)}"
+        )
 
 @router.post("/readings", response_model=SensorReadingResponse, status_code=status.HTTP_201_CREATED)
 def ingest_sensor_reading(

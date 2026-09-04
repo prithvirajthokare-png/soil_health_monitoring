@@ -10,30 +10,38 @@ import {
   Compass, 
   CheckCircle2,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from 'lucide-react';
 
 export default function MetricsOverlay({ locationData, latestReading, evaluationData, onFocusLocation, isLoading }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const locId = locationData?.id || 'LOC_001';
-  const locName = locationData?.name || 'Idea Factory';
-  const currentCrop = locationData?.current_crop || 'tomato';
-  const coverageArea = locationData?.coverage_area || '48.5 Hectares';
-  const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
-  const healthStatus = evaluationData?.health_status || (latestReading ? 'Optimal' : 'Active Node');
+  const isLoc1 = locId === 'LOC_001';
+  const locName = locationData?.name || (isLoc1 ? 'Idea Factory' : 'Test Location');
+  const currentCrop = locationData?.current_crop || (isLoc1 ? 'tomato' : 'Unknown / To be provided');
+  const coverageArea = locationData?.coverage_area || (isLoc1 ? '48.5 Hectares' : 'Unknown / To be provided');
+  
+  // For LOC_001, telemetry is always available (live or baseline demo).
+  // For LOC_002, telemetry is genuinely offline unless real readings exist.
+  const hasTelemetry = isLoc1 ? true : (latestReading !== null && latestReading !== undefined);
+  
+  const healthScore = evaluationData?.health_score ?? (isLoc1 ? 100 : 0);
+  const healthStatus = evaluationData?.health_status || (isLoc1 ? 'Optimal' : 'No Telemetry');
 
-  const lat = locationData?.latitude ?? 13.0094631;
-  const lng = locationData?.longitude ?? 74.7952437;
+  const lat = locationData?.latitude ?? (isLoc1 ? 13.0094631 : 20.1929232);
+  const lng = locationData?.longitude ?? (isLoc1 ? 74.7952437 : 76.5352501);
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
 
-  const moisture = latestReading?.moisture_pct ?? 27.4;
-  const ph = latestReading?.ph ?? 6.78;
-  const temp = latestReading?.temperature_c ?? 21.5;
-  const ec = latestReading?.ec_ds_m ?? 1.18;
-  const nVal = latestReading?.nitrogen_mg_kg ?? 52.5;
-  const pVal = latestReading?.phosphorus_mg_kg ?? 27.5;
-  const kVal = latestReading?.potassium_mg_kg ?? 104.0;
+  // Deterministic values: LOC_001 uses live reading or exact demo baseline (27.4, 6.78, 21.5, 1.18, 52.5, 27.5, 104.0)
+  const moisture = isLoc1 ? (latestReading?.moisture_pct ?? 27.4) : (hasTelemetry ? latestReading.moisture_pct : '—');
+  const ph = isLoc1 ? (latestReading?.ph ?? 6.78) : (hasTelemetry ? latestReading.ph : '—');
+  const temp = isLoc1 ? (latestReading?.temperature_c ?? 21.5) : (hasTelemetry ? latestReading.temperature_c : '—');
+  const ec = isLoc1 ? (latestReading?.ec_ds_m ?? 1.18) : (hasTelemetry ? latestReading.ec_ds_m : '—');
+  const nVal = isLoc1 ? (latestReading?.nitrogen_mg_kg ?? 52.5) : (hasTelemetry ? latestReading.nitrogen_mg_kg : '—');
+  const pVal = isLoc1 ? (latestReading?.phosphorus_mg_kg ?? 27.5) : (hasTelemetry ? latestReading.phosphorus_mg_kg : '—');
+  const kVal = isLoc1 ? (latestReading?.potassium_mg_kg ?? 104.0) : (hasTelemetry ? latestReading.potassium_mg_kg : '—');
 
   const targets = evaluationData?.stage_targets;
   const nTarget = targets?.n_target_mg_kg ?? 53.8;
@@ -42,7 +50,9 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
   const trigMoisture = targets?.irrigation_trigger_pct ?? 20.0;
 
   const recommendations = evaluationData?.recommendations || [
-    `All soil health metrics for ${locName} are within optimal agronomic targets.`
+    isLoc1 
+      ? `All soil health metrics for ${locName} are within optimal agronomic targets.`
+      : 'Connect IoT sensor nodes to begin receiving telemetry.'
   ];
 
   return (
@@ -68,7 +78,9 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 <span className="font-mono font-bold text-xs bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded">
                   {locId}
                 </span>
-                <span className="text-xs text-slate-400">Monitoring Hub</span>
+                <span className="text-xs text-slate-400">
+                  {isLoc1 ? 'Primary Hub' : 'Test Node'}
+                </span>
                 {isLoading && (
                   <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
                 )}
@@ -83,7 +95,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
 
             {/* Health Score Dial */}
             <div className="flex flex-col items-center justify-center p-2 rounded-xl bg-slate-950/80 border border-emerald-500/30 shadow-inner">
-              <div className="text-2xl font-black font-mono text-emerald-400 leading-none">
+              <div className={`text-2xl font-black font-mono leading-none ${healthScore > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
                 {healthScore}
               </div>
               <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold mt-1">Score</div>
@@ -109,7 +121,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
             </button>
           </div>
 
-          {/* Agronomic Recommendations Card (Prominent & Always Visible) */}
+          {/* Agronomic Recommendations Card */}
           <div className="bg-gradient-to-br from-emerald-950/60 to-slate-950/80 p-3 rounded-xl border border-emerald-500/40 shadow-md space-y-1.5">
             <div className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
               <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
@@ -118,7 +130,11 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
             <div className="space-y-1">
               {recommendations.map((rec, idx) => (
                 <div key={idx} className="flex items-start gap-1.5 text-xs text-slate-200 leading-relaxed">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                  {hasTelemetry ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
+                  ) : (
+                    <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  )}
                   <span>{rec}</span>
                 </div>
               ))}
@@ -129,8 +145,9 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
           <div className="space-y-2.5">
             <div className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center justify-between">
               <span>Telemetry Indicators</span>
-              <span className="flex items-center gap-1 text-[11px] text-emerald-400 font-normal normal-case">
-                <CheckCircle2 className="w-3 h-3" /> {healthStatus}
+              <span className={`flex items-center gap-1 text-[11px] font-normal normal-case ${hasTelemetry ? 'text-emerald-400' : 'text-slate-400'}`}>
+                {hasTelemetry ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3 text-slate-500" />} 
+                {healthStatus}
               </span>
             </div>
 
@@ -146,17 +163,19 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold font-mono text-blue-300">{moisture}</span>
-                  <span className="text-xs text-slate-400 font-mono">%</span>
+                  {hasTelemetry && <span className="text-xs text-slate-400 font-mono">%</span>}
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full rounded-full" 
-                    style={{ width: `${Math.min(100, (moisture / 50) * 100)}%` }}
+                    style={{ width: hasTelemetry ? `${Math.min(100, (Number(moisture) / 50) * 100)}%` : '0%' }}
                   ></div>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
                   <span>Trigger: {trigMoisture}%</span>
-                  <span className="text-emerald-400 font-medium">Optimal</span>
+                  <span className={hasTelemetry ? "text-emerald-400 font-medium" : "text-slate-500"}>
+                    {hasTelemetry ? "Optimal" : "No Signal"}
+                  </span>
                 </div>
               </div>
 
@@ -170,17 +189,19 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold font-mono text-purple-300">{ph}</span>
-                  <span className="text-xs text-slate-400 font-mono">pH</span>
+                  {hasTelemetry && <span className="text-xs text-slate-400 font-mono">pH</span>}
                 </div>
                 <div className="w-full bg-slate-800 rounded-full h-1.5 mt-2 overflow-hidden">
                   <div 
                     className="bg-gradient-to-r from-indigo-500 via-purple-500 to-emerald-400 h-full rounded-full" 
-                    style={{ width: `${(ph / 14) * 100}%` }}
+                    style={{ width: hasTelemetry ? `${(Number(ph) / 14) * 100}%` : '0%' }}
                   ></div>
                 </div>
                 <div className="text-[10px] text-slate-500 mt-1 flex justify-between">
                   <span>Range: 5.5-7.5</span>
-                  <span className="text-emerald-400 font-medium">Optimal</span>
+                  <span className={hasTelemetry ? "text-emerald-400 font-medium" : "text-slate-500"}>
+                    {hasTelemetry ? "Optimal" : "No Signal"}
+                  </span>
                 </div>
               </div>
 
@@ -194,11 +215,13 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold font-mono text-amber-300">{temp}</span>
-                  <span className="text-xs text-slate-400 font-mono">°C</span>
+                  {hasTelemetry && <span className="text-xs text-slate-400 font-mono">°C</span>}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 flex justify-between">
-                  <span>Sensor: {locationData?.sensor_id || 'SN_001'}</span>
-                  <span className="text-emerald-400 font-medium">Nominal</span>
+                  <span>Sensor: {locationData?.sensor_id || (isLoc1 ? 'SN_001' : 'SN_002')}</span>
+                  <span className={hasTelemetry ? "text-emerald-400 font-medium" : "text-slate-500"}>
+                    {hasTelemetry ? "Nominal" : "Offline"}
+                  </span>
                 </div>
               </div>
 
@@ -212,11 +235,13 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 </div>
                 <div className="flex items-baseline gap-1">
                   <span className="text-xl font-bold font-mono text-teal-300">{ec}</span>
-                  <span className="text-xs text-slate-400 font-mono">dS/m</span>
+                  {hasTelemetry && <span className="text-xs text-slate-400 font-mono">dS/m</span>}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 flex justify-between">
                   <span>Threshold: 2.5</span>
-                  <span className="text-emerald-400 font-medium">Safe</span>
+                  <span className={hasTelemetry ? "text-emerald-400 font-medium" : "text-slate-500"}>
+                    {hasTelemetry ? "Safe" : "No Signal"}
+                  </span>
                 </div>
               </div>
 
@@ -226,7 +251,9 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
             <div className="bg-slate-950/70 p-3 rounded-xl border border-slate-800 space-y-2">
               <div className="flex items-center justify-between text-xs">
                 <span className="font-semibold text-slate-300">NPK Nutrient Balance (mg/kg)</span>
-                <span className="text-[10px] text-slate-500 font-mono">Crop Target Sync</span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  {hasTelemetry ? "Crop Target Sync" : "No Stream"}
+                </span>
               </div>
 
               <div className="space-y-1.5">
@@ -234,10 +261,15 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Nitrogen (N)</span>
-                    <span className="font-mono font-bold text-emerald-400">{nVal} / {nTarget} mg/kg</span>
+                    <span className="font-mono font-bold text-emerald-400">
+                      {hasTelemetry ? `${nVal} / ${nTarget} mg/kg` : '—'}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (nVal / nTarget) * 100)}%` }}></div>
+                    <div 
+                      className="bg-emerald-500 h-1.5 rounded-full" 
+                      style={{ width: hasTelemetry ? `${Math.min(100, (Number(nVal) / nTarget) * 100)}%` : '0%' }}
+                    ></div>
                   </div>
                 </div>
 
@@ -245,10 +277,15 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Phosphorus (P)</span>
-                    <span className="font-mono font-bold text-cyan-400">{pVal} / {pTarget} mg/kg</span>
+                    <span className="font-mono font-bold text-cyan-400">
+                      {hasTelemetry ? `${pVal} / ${pTarget} mg/kg` : '—'}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (pVal / pTarget) * 100)}%` }}></div>
+                    <div 
+                      className="bg-cyan-500 h-1.5 rounded-full" 
+                      style={{ width: hasTelemetry ? `${Math.min(100, (Number(pVal) / pTarget) * 100)}%` : '0%' }}
+                    ></div>
                   </div>
                 </div>
 
@@ -256,10 +293,15 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                 <div>
                   <div className="flex justify-between text-xs mb-0.5">
                     <span className="text-slate-400">Potassium (K)</span>
-                    <span className="font-mono font-bold text-amber-400">{kVal} / {kTarget} mg/kg</span>
+                    <span className="font-mono font-bold text-amber-400">
+                      {hasTelemetry ? `${kVal} / ${kTarget} mg/kg` : '—'}
+                    </span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, (kVal / kTarget) * 100)}%` }}></div>
+                    <div 
+                      className="bg-amber-500 h-1.5 rounded-full" 
+                      style={{ width: hasTelemetry ? `${Math.min(100, (Number(kVal) / kTarget) * 100)}%` : '0%' }}
+                    ></div>
                   </div>
                 </div>
               </div>

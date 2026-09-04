@@ -39,35 +39,38 @@ export function getExportDataUrl(locationId = 'LOC_001', range = '1week') {
 export async function downloadHistoricalDataCsv(locationId = 'LOC_001', range = '1week') {
   const url = getExportDataUrl(locationId, range);
   
-  // Try direct browser anchor trigger first (most robust for file attachment downloads)
   try {
-    const a = document.createElement('a');
-    a.href = url;
-    a.setAttribute('download', `${locationId}_telemetry_${range}.csv`);
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(() => {
-      a.remove();
-    }, 500);
-    return true;
-  } catch (err) {
-    // Fallback to fetch blob
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`Failed to download historical telemetry (${range}): ${response.statusText}`);
+      let errorDetail = response.statusText;
+      try {
+        const errorJson = await response.json();
+        if (errorJson.detail) {
+          errorDetail = errorJson.detail;
+        }
+      } catch (e) {
+        // Ignore json parse error on non-json error responses
+      }
+      throw new Error(`Export failed (${response.status}): ${errorDetail}`);
     }
+
     const blob = await response.blob();
     const downloadUrl = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
+    a.style.display = 'none';
     a.href = downloadUrl;
     a.download = `${locationId}_telemetry_${range}.csv`;
     document.body.appendChild(a);
     a.click();
+    
     setTimeout(() => {
       a.remove();
       window.URL.revokeObjectURL(downloadUrl);
-    }, 500);
+    }, 1000);
     return true;
+  } catch (err) {
+    console.error('[API Service] Error downloading CSV:', err);
+    throw err;
   }
 }
 
@@ -86,7 +89,7 @@ export async function fetchFullLocationState(locationId = 'LOC_001') {
       error: null
     };
   } catch (err) {
-    console.error('[API Service] Error fetching location state:', err);
+    console.warn('[API Service] Backend offline or unavailable:', err.message);
     return {
       location: null,
       latest: null,

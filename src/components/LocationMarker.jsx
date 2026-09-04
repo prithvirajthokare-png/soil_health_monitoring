@@ -8,7 +8,8 @@ import {
   MapPin, 
   Activity,
   CheckCircle2,
-  Sparkles
+  Sparkles,
+  AlertCircle
 } from 'lucide-react';
 
 // Custom DivIcon for LOC markers with radar pulsing ring
@@ -61,27 +62,35 @@ export default function LocationMarker({
   isSelected = true,
   onSelect 
 }) {
-  const lat = locationData?.latitude ?? 13.0094631;
-  const lng = locationData?.longitude ?? 74.7952437;
+  const locId = locationData?.id || 'LOC_001';
+  const isLoc1 = locId === 'LOC_001';
+  const lat = locationData?.latitude ?? (isLoc1 ? 13.0094631 : 20.1929232);
+  const lng = locationData?.longitude ?? (isLoc1 ? 74.7952437 : 76.5352501);
   const position = [lat, lng];
 
-  const locId = locationData?.id || 'LOC_001';
-  const locName = locationData?.name || 'Idea Factory';
-  const cropName = locationData?.current_crop || 'tomato';
-  const soilType = locationData?.soil_type || 'Loamy Silt';
-  const coverageArea = locationData?.coverage_area || '48.5 Hectares';
+  const locName = locationData?.name || (isLoc1 ? 'Idea Factory' : 'Test Location');
+  const cropName = locationData?.current_crop || (isLoc1 ? 'tomato' : 'Unknown / To be provided');
+  const soilType = locationData?.soil_type || (isLoc1 ? 'Loamy Silt' : 'Unknown / To be provided');
+  const coverageArea = locationData?.coverage_area || (isLoc1 ? '48.5 Hectares' : 'Unknown / To be provided');
   
-  const healthScore = evaluationData?.health_score ?? (locationData?.health_score ?? 100);
-  const healthStatus = evaluationData?.health_status || (latestReading ? 'Optimal' : 'Active Node');
+  const hasTelemetry = isLoc1 ? true : (latestReading !== null && latestReading !== undefined);
+  
+  const healthScore = evaluationData?.health_score ?? (isLoc1 ? 100 : 0);
+  const healthStatus = evaluationData?.health_status || (isLoc1 ? 'Optimal' : 'No Telemetry');
 
-  const moistureVal = latestReading?.moisture_pct ?? 27.4;
-  const phVal = latestReading?.ph ?? 6.78;
-  const tempVal = latestReading?.temperature_c ?? 21.5;
-  const nVal = latestReading?.nitrogen_mg_kg ?? 52.5;
-  const pVal = latestReading?.phosphorus_mg_kg ?? 27.5;
-  const kVal = latestReading?.potassium_mg_kg ?? 104.0;
+  const moistureVal = isLoc1 ? `${latestReading?.moisture_pct ?? 27.4}%` : (hasTelemetry ? `${latestReading.moisture_pct}%` : '—');
+  const phVal = isLoc1 ? (latestReading?.ph ?? 6.78) : (hasTelemetry ? latestReading.ph : '—');
+  const tempVal = isLoc1 ? `${latestReading?.temperature_c ?? 21.5}°C` : (hasTelemetry ? `${latestReading.temperature_c}°C` : '—');
+  const nVal = isLoc1 ? (latestReading?.nitrogen_mg_kg ?? 52.5) : (hasTelemetry ? latestReading.nitrogen_mg_kg : '—');
+  const pVal = isLoc1 ? (latestReading?.phosphorus_mg_kg ?? 27.5) : (hasTelemetry ? latestReading.phosphorus_mg_kg : '—');
+  const kVal = isLoc1 ? (latestReading?.potassium_mg_kg ?? 104.0) : (hasTelemetry ? latestReading.potassium_mg_kg : '—');
 
-  const recommendation = evaluationData?.recommendations?.[0] || 'All soil health metrics are within optimal agronomic targets.';
+  const recommendation = evaluationData?.recommendations?.[0] || (
+    isLoc1 
+      ? 'All soil health metrics for Idea Factory are within optimal agronomic targets.'
+      : 'Connect IoT sensor nodes to begin receiving telemetry.'
+  );
+
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
 
   // Parcel boundary coordinates around dynamic location
@@ -105,11 +114,11 @@ export default function LocationMarker({
         <Polygon 
           positions={fieldBoundary}
           pathOptions={{
-            color: locId === 'LOC_001' ? '#22c55e' : '#06b6d4',
+            color: isLoc1 ? '#22c55e' : '#06b6d4',
             weight: 2,
             opacity: 0.8,
             dashArray: '6, 6',
-            fillColor: showOverlay ? (locId === 'LOC_001' ? '#22c55e' : '#06b6d4') : '#10b981',
+            fillColor: showOverlay ? (isLoc1 ? '#22c55e' : '#06b6d4') : '#10b981',
             fillOpacity: showOverlay ? 0.2 : 0.08
           }}
         />
@@ -121,10 +130,10 @@ export default function LocationMarker({
           center={position} 
           radius={350} 
           pathOptions={{
-            color: locId === 'LOC_001' ? '#10b981' : '#06b6d4',
+            color: isLoc1 ? '#10b981' : '#06b6d4',
             weight: 1,
             opacity: 0.4,
-            fillColor: locId === 'LOC_001' ? '#10b981' : '#06b6d4',
+            fillColor: isLoc1 ? '#10b981' : '#06b6d4',
             fillOpacity: 0.03
           }}
         />
@@ -149,7 +158,11 @@ export default function LocationMarker({
                     {locId}
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    {hasTelemetry ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    ) : (
+                      <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    )}
                     {healthStatus}
                   </span>
                 </div>
@@ -162,7 +175,7 @@ export default function LocationMarker({
 
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wider text-slate-400 font-medium">Health Index</div>
-                <div className="text-xl font-mono font-bold text-emerald-400">
+                <div className={`text-xl font-mono font-bold ${healthScore > 0 ? 'text-emerald-400' : 'text-slate-400'}`}>
                   {healthScore}<span className="text-xs text-slate-400">/100</span>
                 </div>
               </div>
@@ -184,15 +197,19 @@ export default function LocationMarker({
               </div>
               <div>
                 <span className="text-[10px] text-slate-400 block">Active Sensor ID</span>
-                <span className="font-medium text-emerald-400 font-mono">{locationData?.sensor_id || 'SN_001'}</span>
+                <span className="font-medium text-emerald-400 font-mono">
+                  {locationData?.sensor_id || (isLoc1 ? 'SN_001' : 'SN_002')}
+                </span>
               </div>
             </div>
 
             {/* Core Soil Telemetry Metrics */}
             <div className="space-y-1.5">
               <div className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                <span>Live Soil Telemetry</span>
-                <span className="text-[10px] text-slate-500 font-mono">SQLite Stream</span>
+                <span>Soil Telemetry</span>
+                <span className="text-[10px] text-slate-500 font-mono">
+                  {hasTelemetry ? "SQLite Stream" : "No Signal"}
+                </span>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
@@ -203,9 +220,11 @@ export default function LocationMarker({
                   </div>
                   <div className="text-[10px] text-slate-400 leading-none">Moisture</div>
                   <div className="text-sm font-mono font-bold text-blue-300 mt-1">
-                    {moistureVal}%
+                    {moistureVal}
                   </div>
-                  <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
+                  <span className={`text-[9px] font-medium ${hasTelemetry ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasTelemetry ? 'Optimal' : 'Offline'}
+                  </span>
                 </div>
 
                 {/* pH */}
@@ -217,7 +236,9 @@ export default function LocationMarker({
                   <div className="text-sm font-mono font-bold text-purple-300 mt-1">
                     {phVal}
                   </div>
-                  <span className="text-[9px] text-emerald-400 font-medium">Optimal</span>
+                  <span className={`text-[9px] font-medium ${hasTelemetry ? 'text-emerald-400' : 'text-slate-500'}`}>
+                    {hasTelemetry ? 'Optimal' : 'Offline'}
+                  </span>
                 </div>
 
                 {/* Temp */}
@@ -227,9 +248,11 @@ export default function LocationMarker({
                   </div>
                   <div className="text-[10px] text-slate-400 leading-none">Soil Temp</div>
                   <div className="text-sm font-mono font-bold text-amber-300 mt-1">
-                    {tempVal}°C
+                    {tempVal}
                   </div>
-                  <span className="text-[9px] text-slate-400 font-medium">Nominal</span>
+                  <span className={`text-[9px] font-medium ${hasTelemetry ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {hasTelemetry ? 'Nominal' : 'Offline'}
+                  </span>
                 </div>
               </div>
 
@@ -259,9 +282,11 @@ export default function LocationMarker({
             <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
               <span className="flex items-center gap-1">
                 <Activity className="w-3 h-3 text-emerald-400" />
-                <span>Node {locId} Active</span>
+                <span>Node {locId}</span>
               </span>
-              <span className="font-mono text-emerald-400">Backend Live</span>
+              <span className="font-mono text-emerald-400">
+                {hasTelemetry ? 'Stream Connected' : 'Test Node Ready'}
+              </span>
             </div>
 
           </div>

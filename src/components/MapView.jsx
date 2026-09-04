@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
 import { 
   Maximize2, 
@@ -8,23 +8,36 @@ import {
   Layers, 
   Crosshair,
   MapPin,
-  Globe2
+  Globe2,
+  CheckCircle2
 } from 'lucide-react';
 import LocationMarker from './LocationMarker';
 import LayerControl from './LayerControl';
 import MetricsOverlay from './MetricsOverlay';
 
-// Helper component for map interaction hooks and events
-function MapController({ center, zoom, boundsToFit, onZoomChange, onMouseMoveCoord }) {
+// Helper controller for deterministic, non-laggy camera movement
+function MapController({ targetLat, targetLng, targetId, boundsToFit, onZoomChange, onMouseMoveCoord }) {
   const map = useMap();
+  const lastAnimatedIdRef = useRef(null);
 
+  // Smoothly move map when target location or bounds change
   useEffect(() => {
     if (boundsToFit && boundsToFit.length >= 2) {
-      map.fitBounds(boundsToFit, { padding: [50, 50], duration: 1.2 });
-    } else if (center && center[0] && center[1]) {
-      map.flyTo(center, zoom, { duration: 1.2 });
+      lastAnimatedIdRef.current = 'BOUNDS';
+      map.fitBounds(boundsToFit, { padding: [50, 50], maxZoom: 16, animate: true, duration: 0.8 });
+      return;
     }
-  }, [center, zoom, boundsToFit, map]);
+
+    if (targetLat !== undefined && targetLng !== undefined && targetId) {
+      if (lastAnimatedIdRef.current !== targetId) {
+        lastAnimatedIdRef.current = targetId;
+        map.flyTo([targetLat, targetLng], 15, {
+          duration: 0.8,
+          easeLinearity: 0.25
+        });
+      }
+    }
+  }, [targetLat, targetLng, targetId, boundsToFit, map]);
 
   useMapEvents({
     zoomend() {
@@ -50,12 +63,18 @@ export default function MapView({
   onCoordUpdate, 
   zoomLevel 
 }) {
-  const lat = locationData?.latitude ?? 13.0094631;
-  const lng = locationData?.longitude ?? 74.7952437;
-  const locId = locationData?.id || selectedLocationId;
-  const locName = locationData?.name || (locId === 'LOC_001' ? 'Idea Factory' : 'Test Location');
+  // Resolve active location directly and deterministically
+  const activeLocation = useMemo(() => {
+    return locationsList.find(l => l.id === selectedLocationId) || 
+      locationsList[0] || 
+      { id: 'LOC_001', name: 'Idea Factory', latitude: 13.0094631, longitude: 74.7952437 };
+  }, [locationsList, selectedLocationId]);
 
-  const [mapCenter, setMapCenter] = useState([lat, lng]);
+  const lat = activeLocation.latitude;
+  const lng = activeLocation.longitude;
+  const locId = activeLocation.id;
+  const locName = activeLocation.name;
+
   const [currentZoom, setCurrentZoom] = useState(15);
   const [boundsToFit, setBoundsToFit] = useState(null);
   const [activeLayer, setActiveLayer] = useState('satellite');
@@ -65,15 +84,6 @@ export default function MapView({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapInfoBanner, setMapInfoBanner] = useState(true);
   const mapContainerRef = useRef(null);
-
-  // Update map center when active location changes
-  useEffect(() => {
-    if (locationData?.latitude && locationData?.longitude) {
-      setBoundsToFit(null);
-      setMapCenter([locationData.latitude, locationData.longitude]);
-      setCurrentZoom(15);
-    }
-  }, [locationData?.latitude, locationData?.longitude, selectedLocationId]);
 
   // Basemap Tile Providers
   const tileProviders = {
@@ -95,16 +105,24 @@ export default function MapView({
 
   const handleRecenter = () => {
     setBoundsToFit(null);
-    setMapCenter([lat, lng]);
-    setCurrentZoom(15);
+    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
+    if (mapEl && mapEl._leaflet_map) {
+      mapEl._leaflet_map.flyTo([lat, lng], 15, { duration: 0.6 });
+    }
   };
 
   const handleZoomIn = () => {
-    setCurrentZoom(prev => Math.min(prev + 1, 19));
+    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
+    if (mapEl && mapEl._leaflet_map) {
+      mapEl._leaflet_map.zoomIn();
+    }
   };
 
   const handleZoomOut = () => {
-    setCurrentZoom(prev => Math.max(prev - 1, 4));
+    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
+    if (mapEl && mapEl._leaflet_map) {
+      mapEl._leaflet_map.zoomOut();
+    }
   };
 
   const toggleFullscreen = () => {
@@ -117,14 +135,14 @@ export default function MapView({
     }
   };
 
-  // Build list of markers to render (from backend locations list or fallback)
-  const markersToRender = locationsList.length > 0 ? locationsList : [
-    locationData || { id: 'LOC_001', name: 'Idea Factory', latitude: 13.0094631, longitude: 74.7952437 },
-    { id: 'LOC_002', name: 'Test Location', latitude: 20.1929232, longitude: 76.5352501 }
-  ];
+  const handleSelectAndFly = (newLocId) => {
+    setBoundsToFit(null);
+    onSelectLocation?.(newLocId);
+    setShowLocationsPanel(false);
+  };
 
   const handleFitAllLocations = () => {
-    const bounds = markersToRender.map(m => [m.latitude, m.longitude]);
+    const bounds = locationsList.map(m => [m.latitude, m.longitude]);
     setBoundsToFit(bounds);
     setShowLocationsPanel(false);
   };
@@ -132,18 +150,17 @@ export default function MapView({
   return (
     <div ref={mapContainerRef} className="relative flex-1 w-full h-full overflow-hidden bg-slate-950">
       
-      {/* Top Banner Notice (Satellite Map Active) */}
+      {/* Top Banner Notice */}
       {mapInfoBanner && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 text-slate-200 px-3.5 py-1.5 rounded-full shadow-xl flex items-center gap-2.5 text-xs">
           <span className="flex h-2 w-2 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="font-medium">Satellite GIS Active</span>
+          <span className="font-medium">Active Site:</span>
+          <span className="text-emerald-400 font-mono font-bold">{locId} ({locName})</span>
           <span className="text-slate-600">|</span>
-          <span className="text-emerald-400 font-mono">{locId} ({locName})</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-400 font-mono text-[11px]">{markersToRender.length} Monitored Sites</span>
+          <span className="text-slate-400 font-mono text-[11px]">{locationsList.length} Monitored Sites</span>
           <button 
             onClick={() => setMapInfoBanner(false)}
             className="text-slate-400 hover:text-slate-200 ml-1 font-bold"
@@ -157,14 +174,15 @@ export default function MapView({
       {/* Main Leaflet Map Canvas */}
       <MapContainer
         center={[lat, lng]}
-        zoom={currentZoom}
+        zoom={15}
         zoomControl={false}
         attributionControl={false}
         className="w-full h-full z-0 cursor-crosshair"
       >
         <MapController 
-          center={mapCenter} 
-          zoom={currentZoom} 
+          targetLat={lat}
+          targetLng={lng}
+          targetId={locId}
           boundsToFit={boundsToFit}
           onZoomChange={(z) => {
             setCurrentZoom(z);
@@ -193,17 +211,17 @@ export default function MapView({
         )}
 
         {/* Render Location Markers on Map */}
-        {markersToRender.map((loc) => {
+        {locationsList.map((loc) => {
           const isSelected = loc.id === locId;
           return (
             <LocationMarker 
               key={loc.id}
-              locationData={isSelected ? locationData || loc : loc}
+              locationData={isSelected ? { ...loc, ...locationData } : loc}
               latestReading={isSelected ? latestReading : null}
               evaluationData={isSelected ? evaluationData : null}
               showOverlay={showOverlay} 
               isSelected={isSelected}
-              onSelect={onSelectLocation}
+              onSelect={handleSelectAndFly}
             />
           );
         })}
@@ -227,24 +245,21 @@ export default function MapView({
             title="Switch Monitored Locations"
           >
             <MapPin className="w-4 h-4 text-emerald-400" />
-            <span>Sites ({markersToRender.length})</span>
+            <span>Sites ({locationsList.length})</span>
           </button>
 
           {/* Locations Dropdown on Map */}
           {showLocationsPanel && (
             <div className="absolute top-12 left-0 w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-2 z-30 text-xs space-y-1">
               <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800 flex justify-between items-center">
-                <span>Monitored Locations</span>
+                <span>Select Field Location</span>
                 <span className="font-mono text-emerald-400">{locId}</span>
               </div>
               
-              {markersToRender.map((l) => (
+              {locationsList.map((l) => (
                 <button
                   key={l.id}
-                  onClick={() => {
-                    onSelectLocation?.(l.id);
-                    setShowLocationsPanel(false);
-                  }}
+                  onClick={() => handleSelectAndFly(l.id)}
                   className={`w-full text-left p-2 rounded-lg transition-colors flex items-center justify-between ${
                     l.id === locId 
                       ? 'bg-emerald-950/90 text-emerald-300 border border-emerald-500/40' 
@@ -258,9 +273,13 @@ export default function MapView({
                       <div className="text-[11px] text-slate-400">{l.name}</div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-mono text-slate-400">
-                    {l.id === 'LOC_001' ? 'Real Site' : 'Test Node'}
-                  </span>
+                  {l.id === locId ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                  ) : (
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {l.id === 'LOC_001' ? 'Real' : 'Test'}
+                    </span>
+                  )}
                 </button>
               ))}
 
@@ -270,7 +289,7 @@ export default function MapView({
                   className="w-full text-left p-1.5 rounded-lg hover:bg-slate-800 text-slate-300 transition-colors flex items-center gap-2 text-[11px]"
                 >
                   <Globe2 className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>Show All Sites (Fit Map)</span>
+                  <span>Show Both Sites (Fit Map)</span>
                 </button>
               </div>
             </div>
@@ -353,7 +372,7 @@ export default function MapView({
       <div className="absolute top-4 right-4 bottom-6 z-20 flex items-start justify-end pointer-events-none">
         <div className="pointer-events-auto">
           <MetricsOverlay 
-            locationData={locationData}
+            locationData={activeLocation}
             latestReading={latestReading}
             evaluationData={evaluationData}
             onFocusLocation={handleRecenter} 

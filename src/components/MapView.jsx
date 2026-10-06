@@ -16,6 +16,8 @@ import LayerControl from './LayerControl';
 import MetricsOverlay from './MetricsOverlay';
 
 // Helper controller for deterministic, non-laggy camera movement
+function MapInstanceCapture({ setMap }) { const map = useMap(); useEffect(() => { setMap(map); }, [map, setMap]); return null; }
+
 function MapController({ targetLat, targetLng, targetId, boundsToFit, onZoomChange, onMouseMoveCoord }) {
   const map = useMap();
   const lastAnimatedIdRef = useRef(null);
@@ -83,6 +85,7 @@ export default function MapView({
   const [showLocationsPanel, setShowLocationsPanel] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [mapInfoBanner, setMapInfoBanner] = useState(true);
+  const [mapInstance, setMapInstance] = useState(null);
   const mapContainerRef = useRef(null);
 
   // Basemap Tile Providers
@@ -103,27 +106,11 @@ export default function MapView({
 
   const labelsLayer = 'https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
 
-  const handleRecenter = () => {
-    setBoundsToFit(null);
-    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
-    if (mapEl && mapEl._leaflet_map) {
-      mapEl._leaflet_map.flyTo([lat, lng], 15, { duration: 0.6 });
-    }
-  };
+  const handleRecenter = () => { setBoundsToFit(null); mapInstance?.flyTo([lat, lng], 15, { duration: 0.6 }); };
 
-  const handleZoomIn = () => {
-    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
-    if (mapEl && mapEl._leaflet_map) {
-      mapEl._leaflet_map.zoomIn();
-    }
-  };
+  const handleZoomIn = () => { mapInstance?.zoomIn(); };
 
-  const handleZoomOut = () => {
-    const mapEl = mapContainerRef.current?.querySelector('.leaflet-container');
-    if (mapEl && mapEl._leaflet_map) {
-      mapEl._leaflet_map.zoomOut();
-    }
-  };
+  const handleZoomOut = () => { mapInstance?.zoomOut(); };
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -179,6 +166,7 @@ export default function MapView({
         attributionControl={false}
         className="w-full h-full z-0 cursor-crosshair"
       >
+        <MapInstanceCapture setMap={setMapInstance} />
         <MapController 
           targetLat={lat}
           targetLng={lng}

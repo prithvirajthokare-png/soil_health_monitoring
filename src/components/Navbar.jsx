@@ -11,7 +11,10 @@ import {
   ChevronDown,
   FileSpreadsheet,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LayoutDashboard,
+  Map,
+  Bell
 } from 'lucide-react';
 import { downloadHistoricalDataCsv } from '../services/api';
 
@@ -111,7 +114,20 @@ export default function Navbar({
         {/* Center Navigation Tabs & Active Location Selector */}
         <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 shadow-inner">
           
-          {/* Navigation Item: Satellite Map */}
+          {/* Navigation Item: Dashboard */}
+          <button 
+            onClick={() => setActiveTab('dashboard')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'dashboard'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
+            <span>Dashboard</span>
+          </button>
+
+          {/* Navigation Item: Live Map */}
           <button 
             onClick={() => setActiveTab('map')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -120,11 +136,37 @@ export default function Navbar({
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Layers className={`w-3.5 h-3.5 ${activeTab === 'map' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Satellite Map</span>
+            <Map className={`w-3.5 h-3.5 ${activeTab === 'map' ? 'text-emerald-200' : 'text-slate-400'}`} />
+            <span>Live Map</span>
+          </button>
+          
+          {/* Navigation Item: Locations */}
+          <button 
+            onClick={() => setActiveTab('locations')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'locations'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <MapPin className={`w-3.5 h-3.5 ${activeTab === 'locations' ? 'text-emerald-200' : 'text-slate-400'}`} />
+            <span>Locations</span>
+          </button>
+          
+          {/* Navigation Item: Alerts */}
+          <button 
+            onClick={() => setActiveTab('alerts')}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === 'alerts'
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+          >
+            <Bell className={`w-3.5 h-3.5 ${activeTab === 'alerts' ? 'text-emerald-200' : 'text-slate-400'}`} />
+            <span>Alerts</span>
           </button>
 
-          {/* Navigation Item: Team & Project */}
+          {/* Navigation Item: Our Team */}
           <button 
             onClick={() => setActiveTab('team')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -134,7 +176,7 @@ export default function Navbar({
             }`}
           >
             <Users className={`w-3.5 h-3.5 ${activeTab === 'team' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Team & Project</span>
+            <span>Our Team</span>
           </button>
 
           <div className="hidden lg:block h-4 w-px bg-slate-800 mx-1"></div>

@@ -18,30 +18,31 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const locId = locationData?.id || 'LOC_001';
-  const isLoc1 = locId === 'LOC_001';
-  const locName = locationData?.name || (isLoc1 ? 'Idea Factory' : 'Test Location');
-  const currentCrop = locationData?.current_crop || (isLoc1 ? 'tomato' : 'Unknown / To be provided');
-  const coverageArea = locationData?.coverage_area || (isLoc1 ? '48.5 Hectares' : 'Unknown / To be provided');
+  const isLive = locationData?.locationStatus === 'LIVE';
+  const isDemo = locationData?.locationStatus === 'DEMO';
+  const locName = locationData?.name || locationData?.farmName || 'Unknown Location';
+  const currentCrop = locationData?.current_crop || locationData?.crop || 'Unknown';
+  const coverageArea = locationData?.coverage_area || (locationData?.fieldArea ? `${locationData.fieldArea} ${locationData.areaUnit}` : 'Unknown');
   
-  // For LOC_001, telemetry is always available (live or baseline demo).
-  // For LOC_002, telemetry is genuinely offline unless real readings exist.
-  const hasTelemetry = isLoc1 ? true : (latestReading !== null && latestReading !== undefined);
+  // For LIVE locations, telemetry is considered available if latestReading exists (or if it's LOC_001 baseline).
+  // For DEMO locations, telemetry is considered available if latestReading exists (simulated data).
+  const hasTelemetry = (isLive || isDemo) && (locId === 'LOC_001' || (latestReading !== null && latestReading !== undefined));
   
-  const healthScore = evaluationData?.health_score ?? (isLoc1 ? 100 : 0);
-  const healthStatus = evaluationData?.health_status || (isLoc1 ? 'Optimal' : 'No Telemetry');
+  const healthScore = hasTelemetry ? (evaluationData?.health_score ?? (locId === 'LOC_001' ? 100 : 0)) : 0;
+  const healthStatus = hasTelemetry ? (evaluationData?.health_status || 'Optimal') : (isDemo ? 'SIMULATED' : 'No Signal');
 
-  const lat = locationData?.latitude ?? (isLoc1 ? 13.0094631 : 20.1929232);
-  const lng = locationData?.longitude ?? (isLoc1 ? 74.7952437 : 76.5352501);
+  const lat = locationData?.latitude ?? 20;
+  const lng = locationData?.longitude ?? 77;
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
 
-  // Deterministic values: LOC_001 uses live reading or exact demo baseline (27.4, 6.78, 21.5, 1.18, 52.5, 27.5, 104.0)
-  const moisture = isLoc1 ? (latestReading?.moisture_pct ?? 27.4) : (hasTelemetry ? latestReading.moisture_pct : '—');
-  const ph = isLoc1 ? (latestReading?.ph ?? 6.78) : (hasTelemetry ? latestReading.ph : '—');
-  const temp = isLoc1 ? (latestReading?.temperature_c ?? 21.5) : (hasTelemetry ? latestReading.temperature_c : '—');
-  const ec = isLoc1 ? (latestReading?.ec_ds_m ?? 1.18) : (hasTelemetry ? latestReading.ec_ds_m : '—');
-  const nVal = isLoc1 ? (latestReading?.nitrogen_mg_kg ?? 52.5) : (hasTelemetry ? latestReading.nitrogen_mg_kg : '—');
-  const pVal = isLoc1 ? (latestReading?.phosphorus_mg_kg ?? 27.5) : (hasTelemetry ? latestReading.phosphorus_mg_kg : '—');
-  const kVal = isLoc1 ? (latestReading?.potassium_mg_kg ?? 104.0) : (hasTelemetry ? latestReading.potassium_mg_kg : '—');
+  // Deterministic values for LIVE or DEMO:
+  const moisture = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.moisture_pct ?? 27.4) : latestReading?.moisture_pct) : '—';
+  const ph = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.ph ?? 6.78) : latestReading?.ph) : '—';
+  const temp = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.temperature_c ?? 21.5) : latestReading?.temperature_c) : '—';
+  const ec = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.ec_ds_m ?? 1.18) : (latestReading?.ec_ds_m ?? '—')) : '—';
+  const nVal = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.nitrogen_mg_kg ?? 52.5) : latestReading?.nitrogen_mg_kg) : '—';
+  const pVal = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.phosphorus_mg_kg ?? 27.5) : latestReading?.phosphorus_mg_kg) : '—';
+  const kVal = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.potassium_mg_kg ?? 104.0) : latestReading?.potassium_mg_kg) : '—';
 
   const targets = evaluationData?.stage_targets;
   const nTarget = targets?.n_target_mg_kg ?? 53.8;
@@ -49,11 +50,9 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
   const kTarget = targets?.k_target_mg_kg ?? 103.0;
   const trigMoisture = targets?.irrigation_trigger_pct ?? 20.0;
 
-  const recommendations = evaluationData?.recommendations || [
-    isLoc1 
-      ? `All soil health metrics for ${locName} are within optimal agronomic targets.`
-      : 'Connect IoT sensor nodes to begin receiving telemetry.'
-  ];
+  const recommendations = hasTelemetry 
+    ? (evaluationData?.recommendations || [locId === 'LOC_001' ? `All soil health metrics for ${locName} are within optimal agronomic targets.` : 'Metrics within operational bounds.'])
+    : (isDemo ? ['Simulated demo telemetry shown.'] : ['Connect IoT sensor nodes to begin receiving telemetry.']);
 
   return (
     <div className={`transition-all duration-300 ease-in-out ${isCollapsed ? 'translate-x-[calc(100%-36px)]' : 'translate-x-0'}`}>
@@ -79,7 +78,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                   {locId}
                 </span>
                 <span className="text-xs text-slate-400">
-                  {isLoc1 ? 'Primary Hub' : 'Test Node'}
+                  {isLive ? 'Primary Hub' : 'Demo Node'}
                 </span>
                 {isLoading && (
                   <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
@@ -218,7 +217,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                   {hasTelemetry && <span className="text-xs text-slate-400 font-mono">°C</span>}
                 </div>
                 <div className="text-[10px] text-slate-500 mt-2 flex justify-between">
-                  <span>Sensor: {locationData?.sensor_id || (isLoc1 ? 'SN_001' : 'SN_002')}</span>
+                  <span>Sensor: {locationData?.sensorId || locationData?.sensor_id || (isLive ? 'SN_001' : 'DEMO')}</span>
                   <span className={hasTelemetry ? "text-emerald-400 font-medium" : "text-slate-500"}>
                     {hasTelemetry ? "Nominal" : "Offline"}
                   </span>

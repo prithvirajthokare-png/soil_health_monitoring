@@ -2,39 +2,58 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Navbar from './components/Navbar';
 import MapView from './components/MapView';
 import TeamProjectView from './components/TeamProjectView';
+import DashboardView from './components/DashboardView';
+import LocationsView from './components/LocationsView';
+import AlertsView from './components/AlertsView';
+import GlobalAlert from './components/GlobalAlert';
 import StatusBar from './components/StatusBar';
 import { fetchFullLocationState, fetchAllLocations } from './services/api';
 import { DEMO_LOC_001_READING, DEMO_LOC_001_EVALUATION } from './data/mockLocation';
 
-// Stable deterministic list of the 2 supported locations
+import { DEMO_LOCATIONS } from './data/demoLocations';
+
+// Stable deterministic list of the 50 supported locations (1 LIVE, 49 DEMO)
 export const SUPPORTED_LOCATIONS = [
   { 
     id: 'LOC_001', 
-    name: 'Idea Factory', 
+    name: 'Idea Factory',
+    farmerName: 'NITK Surathkal',
+    farmName: 'Idea Factory Research Farm',
+    village: 'Surathkal',
+    district: 'Dakshina Kannada',
+    state: 'Karnataka',
+    country: 'India',
     latitude: 13.0094631, 
     longitude: 74.7952437,
     current_crop: 'tomato',
+    crop: 'Tomato',
     soil_type: 'Loamy Silt',
     coverage_area: '48.5 Hectares',
-    sensor_id: 'SN_001'
+    fieldArea: '48.5',
+    areaUnit: 'Hectares',
+    sensor_id: 'SN_001',
+    sensorId: 'SN_001',
+    sensorStatus: 'ONLINE',
+    locationStatus: 'LIVE',
+    locationType: 'FIELD',
+    alertStatus: 'NORMAL',
+    healthStatus: 'Healthy',
+    cropCycleStart: '2025-10-01',
+    cropCycleEnd: '2026-12-01',
+    fieldBoundary: null,
+    cropHistory: ['Tomato'],
+    installationDate: '2024-05-15'
   },
-  { 
-    id: 'LOC_002', 
-    name: 'Test Location', 
-    latitude: 20.1929232, 
-    longitude: 76.5352501,
-    current_crop: 'Unknown / To be provided',
-    soil_type: 'Unknown / To be provided',
-    coverage_area: 'Unknown / To be provided',
-    sensor_id: 'SN_002'
-  }
+  ...DEMO_LOCATIONS
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('map'); // 'map' | 'team'
+  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'map' | 'locations' | 'alerts' | 'team'
   const [zoomLevel, setZoomLevel] = useState(15);
   const [cursorCoords, setCursorCoords] = useState(null);
   const [activeLayer, setActiveLayer] = useState('satellite');
+  const [drawingMode, setDrawingMode] = useState(null);
+  const [draftLocationData, setDraftLocationData] = useState(null);
 
   // Multi-location State
   const [selectedLocationId, setSelectedLocationId] = useState('LOC_001');
@@ -61,7 +80,10 @@ export default function App() {
         // Merge with supported coordinates to ensure zero missing geometry
         const merged = SUPPORTED_LOCATIONS.map(sup => {
           const remote = locs.find(l => l.id === sup.id);
-          return remote ? { ...sup, ...remote } : sup;
+          if (remote && sup.locationStatus === 'LIVE') {
+             return { ...sup, ...remote };
+          }
+          return sup;
         });
         setLocationsList(merged);
       }
@@ -80,6 +102,17 @@ export default function App() {
       SUPPORTED_LOCATIONS[0];
     
     setLocationData(baseLoc);
+
+    // If DEMO location, use simulated telemetry immediately and avoid hitting the backend
+    if (baseLoc.locationStatus === 'DEMO') {
+      setIsLive(false);
+      setLatestReading(baseLoc.simulatedTelemetry?.reading || null);
+      setEvaluationData(baseLoc.simulatedTelemetry?.evaluation || null);
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setApiError(null);
+      return;
+    }
 
     if (isManual) {
       setIsRefreshing(true);
@@ -111,9 +144,9 @@ export default function App() {
           setEvaluationData(DEMO_LOC_001_EVALUATION);
         } else {
           setEvaluationData({
-            health_score: 0,
-            health_status: 'No Telemetry',
-            recommendations: ['Connect IoT sensor nodes to begin receiving telemetry.']
+            health_score: baseLoc.healthStatus === 'Healthy' ? 85 : 45,
+            health_status: baseLoc.locationStatus === 'DEMO' ? 'Demo Telemetry' : 'No Telemetry',
+            recommendations: baseLoc.locationStatus === 'DEMO' ? ['Demo location - telemetry disconnected.'] : ['Connect IoT sensor nodes to begin receiving telemetry.']
           });
         }
 
@@ -128,9 +161,9 @@ export default function App() {
         } else {
           setLatestReading(null);
           setEvaluationData({
-            health_score: 0,
-            health_status: 'No Telemetry',
-            recommendations: ['Connect IoT sensor nodes to begin receiving telemetry.']
+            health_score: baseLoc.healthStatus === 'Healthy' ? 85 : 45,
+            health_status: baseLoc.locationStatus === 'DEMO' ? 'Demo Telemetry' : 'No Telemetry',
+            recommendations: baseLoc.locationStatus === 'DEMO' ? ['Demo location - telemetry disconnected.'] : ['Connect IoT sensor nodes to begin receiving telemetry.']
           });
         }
         setApiError(state.error || 'Backend offline');
@@ -144,9 +177,9 @@ export default function App() {
         } else {
           setLatestReading(null);
           setEvaluationData({
-            health_score: 0,
-            health_status: 'No Telemetry',
-            recommendations: ['Connect IoT sensor nodes to begin receiving telemetry.']
+            health_score: baseLoc.healthStatus === 'Healthy' ? 85 : 45,
+            health_status: baseLoc.locationStatus === 'DEMO' ? 'Demo Telemetry' : 'No Telemetry',
+            recommendations: baseLoc.locationStatus === 'DEMO' ? ['Demo location - telemetry disconnected.'] : ['Connect IoT sensor nodes to begin receiving telemetry.']
           });
         }
         setApiError(err.message);
@@ -168,7 +201,7 @@ export default function App() {
   }, [selectedLocationId, loadData]);
 
   const handleSelectLocation = useCallback((locId) => {
-    if (!locId || (locId !== 'LOC_001' && locId !== 'LOC_002')) return;
+    if (!locId) return;
     
     // Immediate synchronous state update
     setSelectedLocationId(locId);
@@ -180,10 +213,13 @@ export default function App() {
       if (locId === 'LOC_001') {
         setLatestReading(DEMO_LOC_001_READING);
         setEvaluationData(DEMO_LOC_001_EVALUATION);
+      } else if (targetBase.locationStatus === 'DEMO') {
+        setLatestReading(targetBase.simulatedTelemetry?.reading || null);
+        setEvaluationData(targetBase.simulatedTelemetry?.evaluation || null);
       } else {
         setLatestReading(null);
         setEvaluationData({
-          health_score: 0,
+          health_score: targetBase.healthStatus === 'Healthy' ? 85 : 45,
           health_status: 'No Telemetry',
           recommendations: ['Connect IoT sensor nodes to begin receiving telemetry.']
         });
@@ -218,6 +254,12 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
+      <GlobalAlert 
+        locationData={locationData} 
+        evaluationData={evaluationData}
+        latestReading={latestReading}
+        onViewLocation={handleSelectLocation}
+      />
       {/* Top Navbar */}
       <Navbar 
         locationData={locationData}
@@ -239,24 +281,76 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="relative flex-1 w-full h-full overflow-hidden flex">
-        {activeTab === 'map' ? (
-          <MapView 
-            locationData={locationData}
-            locationsList={locationsList}
-            selectedLocationId={selectedLocationId}
+        {activeTab === 'dashboard' && (
+          <div className="w-full h-full block">
+            <DashboardView 
+              locationData={locationData}
+              latestReading={latestReading}
+              evaluationData={evaluationData}
+              locationsList={locationsList}
+              setActiveTab={setActiveTab}
+            />
+          </div>
+        )}
+        
+        {activeTab === 'map' && (
+          <div className="w-full h-full flex flex-col block">
+            <MapView 
+              locationData={locationData}
+              locationsList={locationsList}
+              selectedLocationId={selectedLocationId}
+              onSelectLocation={handleSelectLocation}
+              latestReading={latestReading}
+              evaluationData={evaluationData}
+              isLoading={isLoading || isRefreshing}
+              onZoomUpdate={setZoomLevel}
+              onCoordUpdate={handleCoordUpdate}
+              zoomLevel={zoomLevel}
+              drawingMode={drawingMode}
+              onFinishDrawing={(updatedLoc) => {
+                setDrawingMode(null);
+                setDraftLocationData(updatedLoc);
+                setActiveTab('locations');
+              }}
+              onCancelDrawing={() => {
+                setDrawingMode(null);
+                setActiveTab('locations');
+              }}
+            />
+          </div>
+        )}
+
+        <div className={`w-full h-full flex flex-col ${activeTab === 'locations' ? 'block' : 'hidden'}`}>
+          <LocationsView 
+            locationsList={locationsList} 
+            setLocationsList={setLocationsList}
+            setActiveTab={setActiveTab}
             onSelectLocation={handleSelectLocation}
-            latestReading={latestReading}
-            evaluationData={evaluationData}
-            isLoading={isLoading || isRefreshing}
-            onZoomUpdate={setZoomLevel}
-            onCoordUpdate={handleCoordUpdate}
-            zoomLevel={zoomLevel}
+            draftLocationData={draftLocationData}
+            clearDraft={() => setDraftLocationData(null)}
+            onStartDrawing={(formData) => {
+              setDrawingMode(formData);
+              setActiveTab('map');
+            }}
           />
-        ) : (
-          <TeamProjectView 
-            locationData={locationData}
-            onBackToMap={() => setActiveTab('map')} 
-          />
+        </div>
+
+        {activeTab === 'alerts' && (
+          <div className="w-full h-full block">
+            <AlertsView 
+              locationsList={locationsList}
+              onSelectLocation={handleSelectLocation}
+            />
+          </div>
+        )}
+
+        {activeTab === 'team' && (
+          <div className="w-full h-full overflow-y-auto block">
+            <TeamProjectView 
+              locationData={locationData}
+              onBackToMap={() => setActiveTab('map')} 
+            />
+          </div>
         )}
       </main>
 

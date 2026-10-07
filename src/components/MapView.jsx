@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import { MapContainer, TileLayer, useMap, useMapEvents, Polyline, Polygon, Marker } from 'react-leaflet';
 import { 
   Maximize2, 
   Minimize2, 
@@ -14,6 +15,116 @@ import {
 import LocationMarker from './LocationMarker';
 import LayerControl from './LayerControl';
 import MetricsOverlay from './MetricsOverlay';
+
+function calculatePolygonArea(latlngs) {
+  if (!latlngs || latlngs.length < 3) return 0;
+  const R = 6378137;
+  let area = 0;
+  for (let i = 0; i < latlngs.length; i++) {
+    const p1 = latlngs[i];
+    const p2 = latlngs[(i + 1) % latlngs.length];
+    const lon1 = (p1.lng || p1[1]) * Math.PI / 180;
+    const lon2 = (p2.lng || p2[1]) * Math.PI / 180;
+    const lat1 = (p1.lat || p1[0]) * Math.PI / 180;
+    const lat2 = (p2.lat || p2[0]) * Math.PI / 180;
+    area += (lon2 - lon1) * (2 + Math.sin(lat1) + Math.sin(lat2));
+  }
+  return Math.abs(area * R * R / 2);
+}
+
+function MapDrawControl({ drawingMode, onFinishDrawing, onCancelDrawing }) {
+  const [drawnPoints, setDrawnPoints] = useState([]);
+  
+  useEffect(() => {
+    if (drawingMode && drawingMode.fieldBoundary && drawingMode.fieldBoundary.length > 0) {
+      setDrawnPoints(drawingMode.polygon);
+    } else {
+      setDrawnPoints([]);
+    }
+  }, [drawingMode]);
+
+  useMapEvents({
+    click(e) {
+      if (!drawingMode) return;
+      if (drawingMode.locationType === 'POINT' || drawingMode.locationType === 'PLANT') {
+        onFinishDrawing({
+          ...drawingMode,
+          latitude: e.latlng.lat,
+          longitude: e.latlng.lng,
+          fieldBoundary: null,
+          fieldArea: null,
+          areaUnit: null
+        });
+      } else if (drawingMode.locationType === 'FIELD') {
+        setDrawnPoints(prev => [...prev, e.latlng]);
+      }
+    }
+  });
+
+  if (!drawingMode) return null;
+
+  const handleUndo = (e) => { e?.stopPropagation?.(); e?.nativeEvent?.stopPropagation?.(); setDrawnPoints(prev => prev.slice(0, -1)); };
+  const handleClear = (e) => { e?.stopPropagation?.(); e?.nativeEvent?.stopPropagation?.(); setDrawnPoints([]); };
+  const handleFinish = (e) => { e?.stopPropagation?.(); e?.nativeEvent?.stopPropagation?.(); if (drawnPoints.length < 3) return alert('Field boundary must have at least 3 points.');
+    const area = calculatePolygonArea(drawnPoints);
+    const areaAcres = (area / 4046.8564224).toFixed(2);
+    
+    const lats = drawnPoints.map(p => p.lat || p[0]);
+    const lngs = drawnPoints.map(p => p.lng || p[1]);
+    const centerLat = lats.reduce((a,b)=>a+b, 0) / lats.length;
+    const centerLng = lngs.reduce((a,b)=>a+b, 0) / lngs.length;
+
+    onFinishDrawing({
+      ...drawingMode,
+      fieldBoundary: drawnPoints,
+      fieldArea: areaAcres,
+      areaUnit: 'acres',
+      latitude: centerLat,
+      longitude: centerLng
+    });
+  };
+
+  return (
+    <>
+      {drawingMode.locationType === 'FIELD' && drawnPoints.length > 0 && (
+        <Polygon positions={drawnPoints} color="#10b981" fillColor="#10b981" fillOpacity={0.2} weight={3} dashArray="5, 10" />
+      )}
+      {drawingMode.locationType === 'FIELD' && drawnPoints.map((p, i) => (
+        <Marker key={i} position={p} />
+      ))}
+      
+      <div 
+    ref={(ref) => { if (ref) L.DomEvent.disableClickPropagation(ref); }}
+    className="leaflet-top leaflet-center" 
+    style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', zIndex: 1000, pointerEvents: 'auto' }}
+  >
+        <div className="bg-slate-900/95 backdrop-blur-md border border-emerald-500/50 rounded-xl shadow-2xl p-3 flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-emerald-400 font-bold text-sm">
+              {drawingMode.locationType === 'FIELD' ? 'Draw Field Boundary' : 'Select Location'}
+            </span>
+            <span className="text-slate-400 text-xs">
+              {drawingMode.locationType === 'FIELD' 
+                ? 'Click on the map to add points to the boundary.' 
+                : 'Click once on the map to set the exact location.'}
+            </span>
+          </div>
+          <div className="w-px h-8 bg-slate-700 mx-2"></div>
+          
+          {drawingMode.locationType === 'FIELD' && (
+            <>
+              <button onClick={handleUndo} disabled={drawnPoints.length === 0} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 text-xs font-medium transition-colors">Undo</button>
+              <button onClick={handleClear} disabled={drawnPoints.length === 0} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-300 text-xs font-medium transition-colors">Clear</button>
+              <button onClick={handleFinish} disabled={drawnPoints.length < 3} className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-bold transition-colors shadow-lg shadow-emerald-900/50">Finish Polygon</button>
+            </>
+          )}
+          
+          <button onClick={(e) => { e?.stopPropagation?.(); onCancelDrawing?.(); }} className="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition-colors">Cancel</button>
+        </div>
+      </div>
+    </>
+  );
+}
 
 // Helper controller for deterministic, non-laggy camera movement
 function MapInstanceCapture({ setMap }) { const map = useMap(); useEffect(() => { setMap(map); }, [map, setMap]); return null; }
@@ -63,7 +174,10 @@ export default function MapView({
   isLoading, 
   onZoomUpdate, 
   onCoordUpdate, 
-  zoomLevel 
+  zoomLevel,
+  drawingMode,
+  onFinishDrawing,
+  onCancelDrawing
 }) {
   // Resolve active location directly and deterministically
   const activeLocation = useMemo(() => {
@@ -167,6 +281,7 @@ export default function MapView({
         className="w-full h-full z-0 cursor-crosshair"
       >
         <MapInstanceCapture setMap={setMapInstance} />
+        <MapDrawControl drawingMode={drawingMode} onFinishDrawing={onFinishDrawing} onCancelDrawing={onCancelDrawing} />
         <MapController 
           targetLat={lat}
           targetLng={lng}
@@ -257,15 +372,15 @@ export default function MapView({
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${l.id === locId ? 'bg-emerald-400' : 'bg-slate-500'}`}></span>
                     <div>
-                      <div className="font-bold font-mono text-slate-100">{l.id}</div>
-                      <div className="text-[11px] text-slate-400">{l.name}</div>
+                      <div className="font-bold text-slate-100 truncate max-w-[150px]">{l.farmerName ? `${l.farmerName} Farm` : (l.name || 'Demo Location')}</div>
+                      <div className="text-[10px] text-slate-400">{l.village ? `${l.village}, ${l.state}` : l.id}</div>
                     </div>
                   </div>
                   {l.id === locId ? (
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                   ) : (
                     <span className="text-[10px] font-mono text-slate-400">
-                      {l.id === 'LOC_001' ? 'Real' : 'Test'}
+                      {l.id === 'LOC_001' ? 'Real' : 'Simulated'}
                     </span>
                   )}
                 </button>

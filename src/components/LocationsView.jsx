@@ -10,8 +10,19 @@ import {
   CheckCircle2, 
   AlertCircle, 
   Info,
-  Radio
+  Radio,
+  Trash2
 } from 'lucide-react';
+
+
+const INDIAN_CROPS = [
+  "Rice", "Wheat", "Maize", "Sorghum", "Pearl Millet", "Finger Millet", 
+  "Sugarcane", "Cotton", "Groundnut", "Soybean", "Chickpea", "Pigeon Pea", 
+  "Black Gram", "Green Gram", "Lentil", "Tomato", "Potato", "Onion", 
+  "Chilli", "Brinjal", "Okra", "Cabbage", "Cauliflower", "Carrot", 
+  "Banana", "Coconut", "Arecanut", "Mango", "Cashew", "Coffee", 
+  "Tea", "Black Pepper", "Cardamom", "Turmeric", "Ginger", "Paddy", "Other"
+].sort();
 
 export default function LocationsView({ locationsList, setLocationsList, setActiveTab, onSelectLocation, onStartDrawing, draftLocationData, clearDraft }) {
   const [search, setSearch] = useState('');
@@ -67,6 +78,11 @@ export default function LocationsView({ locationsList, setLocationsList, setActi
     });
   };
 
+  const handleDeleteLocation = (locId) => {
+    setLocationsList(locationsList.filter(l => l.id !== locId));
+    setSelectedLocation(null);
+  };
+
   const handleViewOnMap = (locId) => {
     onSelectLocation(locId);
     // Already sets active tab to map in App.jsx via onSelectLocation
@@ -85,7 +101,20 @@ export default function LocationsView({ locationsList, setLocationsList, setActi
     } else if (isEditing && selectedLocation) {
       setLocationsList(locationsList.map(l => {
         if (l.id === selectedLocation.id) {
-           const updated = { ...l, ...formData };
+             const updated = { ...l, ...formData };
+             if (updated.id === 'LOC_001') {
+                 try {
+                     const geomOverride = {
+                         locationType: updated.locationType,
+                         latitude: updated.latitude,
+                         longitude: updated.longitude,
+                         fieldBoundary: updated.fieldBoundary,
+                         fieldArea: updated.fieldArea,
+                         areaUnit: updated.areaUnit
+                     };
+                     localStorage.setItem('loc_001_geometry', JSON.stringify(geomOverride));
+                 } catch(e) {}
+             }
            if (updated.locationStatus === 'DEMO' && updated.simulatedTelemetry) {
                const recs = updated.simulatedTelemetry.evaluation.recommendations;
                if (recs && recs[0] && recs[0].includes('optimal for')) {
@@ -338,16 +367,31 @@ export default function LocationsView({ locationsList, setLocationsList, setActi
               <Map className="w-4 h-4" />
               <span>View on Map</span>
             </button>
-            <button 
-              onClick={() => setIsEditing(true)}
-              className="flex items-center justify-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 py-2.5 rounded-lg font-semibold transition-colors"
-            >
-              <Edit className="w-4 h-4" />
-              <span>Edit Location</span>
-            </button>
+                          <button 
+                onClick={() => setIsEditing(true)}
+                className="flex items-center justify-center gap-2 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-400 border border-emerald-500/40 py-2.5 rounded-lg font-semibold transition-colors"
+              >
+                <Edit className="w-4 h-4" />
+                <span>Edit Location</span>
+              </button>
+            </div>
+            {selectedLocation.id !== 'LOC_001' && (
+              <div className="p-4 pt-0 border-t-0 border-slate-800 bg-slate-950 flex justify-end rounded-b-2xl">
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Delete ${selectedLocation.farmerName ? selectedLocation.farmerName + ' Farm' : (selectedLocation.name || selectedLocation.id)}?\nThis action cannot be undone.`)) {
+                      handleDeleteLocation(selectedLocation.id);
+                    }
+                  }}
+                  className="flex items-center justify-center gap-2 text-rose-500 hover:text-rose-400 py-2 px-4 rounded-lg font-semibold transition-colors border border-rose-500/20 hover:border-rose-500/40 bg-rose-500/10 hover:bg-rose-500/20 text-sm"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span>Delete Location</span>
+                </button>
+              </div>
+            )}
           </div>
-        </div>
-      )}
+        )}
 
       {/* Add / Edit Form Modal */}
       {(isAdding || isEditing) && (
@@ -479,20 +523,18 @@ function LocationForm({ location, onSave, onCancel, onStartDrawing }) {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-400">New Crop</label>
-                        <select value={newCrop} onChange={(e) => setNewCrop(e.target.value)} className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500">
-                           <option value="">Select Crop...</option>
-                           <option value="Paddy">Paddy</option>
-                           <option value="Wheat">Wheat</option>
-                           <option value="Sugarcane">Sugarcane</option>
-                           <option value="Cotton">Cotton</option>
-                           <option value="Arecanut">Arecanut</option>
-                           <option value="Coffee">Coffee</option>
-                           <option value="Coconut">Coconut</option>
-                           <option value="Tea">Tea</option>
-                           <option value="Grape">Grape</option>
-                           <option value="Groundnut">Groundnut</option>
-                           <option value="Chilli">Chilli</option>
-                        </select>
+                        
+                          <input 
+                            list="history-crop-options"
+                            value={newCrop} 
+                            onChange={(e) => setNewCrop(e.target.value)} 
+                            placeholder="Search or select crop..."
+                            className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500"
+                            autoComplete="off"
+                          />
+                          <datalist id="history-crop-options">
+                            {INDIAN_CROPS.map(c => <option key={c} value={c} />)}
+                          </datalist>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-semibold text-slate-400">Start Date</label>
@@ -524,20 +566,21 @@ function LocationForm({ location, onSave, onCancel, onStartDrawing }) {
               <>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-400">Crop</label>
-                  <select name="crop" value={formData.crop} onChange={handleChange} className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500">
-                     <option value="">Select Crop...</option>
-                     <option value="Paddy">Paddy</option>
-                     <option value="Wheat">Wheat</option>
-                     <option value="Sugarcane">Sugarcane</option>
-                     <option value="Cotton">Cotton</option>
-                     <option value="Arecanut">Arecanut</option>
-                     <option value="Coffee">Coffee</option>
-                     <option value="Coconut">Coconut</option>
-                     <option value="Tea">Tea</option>
-                     <option value="Grape">Grape</option>
-                     <option value="Groundnut">Groundnut</option>
-                     <option value="Chilli">Chilli</option>
-                  </select>
+                  
+                    <div className="relative">
+                      <input 
+                        list="crop-options"
+                        name="crop" 
+                        value={formData.crop} 
+                        onChange={handleChange} 
+                        placeholder="Search or select crop..."
+                        className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500"
+                        autoComplete="off"
+                      />
+                      <datalist id="crop-options">
+                        {INDIAN_CROPS.map(c => <option key={c} value={c} />)}
+                      </datalist>
+                    </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-slate-400">Crop Cycle Start</label>
@@ -555,7 +598,7 @@ function LocationForm({ location, onSave, onCancel, onStartDrawing }) {
                 <input name="fieldArea" value={formData.fieldArea} onChange={handleChange} className="w-2/3 bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500" />
                 <select name="areaUnit" value={formData.areaUnit} onChange={handleChange} className="w-1/3 bg-slate-950 border border-slate-800 rounded-lg px-2 py-2 text-sm text-slate-200 outline-none focus:border-emerald-500">
                   <option value="acres">acres</option>
-                  <option value="hectares">hectares</option>
+                  
                 </select>
               </div>
             </div>

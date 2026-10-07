@@ -28,9 +28,9 @@ export const SUPPORTED_LOCATIONS = [
     current_crop: 'tomato',
     crop: 'Tomato',
     soil_type: 'Loamy Silt',
-    coverage_area: '48.5 Hectares',
+    coverage_area: '119.8 Acres',
     fieldArea: '48.5',
-    areaUnit: 'Hectares',
+    areaUnit: 'Acres',
     sensor_id: 'SN_001',
     sensorId: 'SN_001',
     sensorStatus: 'ONLINE',
@@ -47,6 +47,18 @@ export const SUPPORTED_LOCATIONS = [
   ...DEMO_LOCATIONS
 ];
 
+
+const getInitialLocations = () => {
+  let list = [...SUPPORTED_LOCATIONS];
+  try {
+    const geomOverride = JSON.parse(localStorage.getItem('loc_001_geometry'));
+    if (geomOverride) {
+      list = list.map(l => l.id === 'LOC_001' ? { ...l, ...geomOverride } : l);
+    }
+  } catch (e) {}
+  return list;
+};
+
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'map' | 'locations' | 'alerts' | 'team'
   const [zoomLevel, setZoomLevel] = useState(15);
@@ -57,10 +69,10 @@ export default function App() {
 
   // Multi-location State
   const [selectedLocationId, setSelectedLocationId] = useState('LOC_001');
-  const [locationsList, setLocationsList] = useState(SUPPORTED_LOCATIONS);
+  const [locationsList, setLocationsList] = useState(getInitialLocations());
 
   // Backend Live State with deterministic LOC_001 demo baseline
-  const [locationData, setLocationData] = useState(SUPPORTED_LOCATIONS[0]);
+  const [locationData, setLocationData] = useState(getInitialLocations()[0]);
   const [latestReading, setLatestReading] = useState(DEMO_LOC_001_READING);
   const [evaluationData, setEvaluationData] = useState(DEMO_LOC_001_EVALUATION);
   const [isLive, setIsLive] = useState(false);
@@ -78,10 +90,19 @@ export default function App() {
       const locs = await fetchAllLocations();
       if (Array.isArray(locs) && locs.length > 0) {
         // Merge with supported coordinates to ensure zero missing geometry
-        const merged = SUPPORTED_LOCATIONS.map(sup => {
+        const merged = getInitialLocations().map(sup => {
           const remote = locs.find(l => l.id === sup.id);
           if (remote && sup.locationStatus === 'LIVE') {
-             return { ...sup, ...remote };
+             const mergedLoc = { ...sup, ...remote };
+             if (mergedLoc.id === 'LOC_001') {
+               try {
+                 const geomOverride = JSON.parse(localStorage.getItem('loc_001_geometry'));
+                 if (geomOverride) {
+                   Object.assign(mergedLoc, geomOverride);
+                 }
+               } catch (e) {}
+             }
+             return mergedLoc;
           }
           return sup;
         });
@@ -129,7 +150,18 @@ export default function App() {
       }
 
       if (state.location) {
-        setLocationData(prev => ({ ...prev, ...state.location }));
+        setLocationData(prev => {
+          const updated = { ...prev, ...state.location };
+          if (updated.id === 'LOC_001') {
+            try {
+              const geomOverride = JSON.parse(localStorage.getItem('loc_001_geometry'));
+              if (geomOverride) {
+                Object.assign(updated, geomOverride);
+              }
+            } catch(e) {}
+          }
+          return updated;
+        });
         if (state.latest) {
           setLatestReading(state.latest);
         } else if (locationId === 'LOC_001') {

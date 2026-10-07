@@ -349,12 +349,12 @@ export default function TeamProjectView({ locationData, onBackToMap }) {
 
             </div>
 
-            {/* Secondary Site Card: LOC_002 (Test Location) */}
+            {/* Secondary Site Card: LOC_002 (Demo Location) */}
             <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 md:p-6 shadow-xl flex flex-col justify-between space-y-4">
               <div>
                 <div className="flex items-center gap-2 text-base font-bold text-slate-300 mb-3">
                   <Sprout className="w-5 h-5 text-amber-400" />
-                  <h2>Secondary Test Location</h2>
+                  <h2>Secondary Simulated Location</h2>
                 </div>
 
                 <div className="space-y-3">
@@ -378,13 +378,13 @@ export default function TeamProjectView({ locationData, onBackToMap }) {
                   </div>
 
                   <p className="text-xs text-slate-400 leading-relaxed">
-                    Test node for verifying multi-location telemetry and spatial dashboard switching.
+                    Demo node for verifying multi-location telemetry and spatial dashboard switching.
                   </p>
                 </div>
               </div>
 
               <div className="text-[11px] text-slate-500 font-mono pt-3 border-t border-slate-800">
-                Multi-Location Test Node
+                Multi-Location Simulated Node
               </div>
             </div>
 

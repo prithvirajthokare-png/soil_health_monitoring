@@ -74,7 +74,7 @@ export const FIELD_DETAILS = {
     isPlaceholder: false,
     coordinates: '13.0094631° N, 74.7952437° E',
     elevation: 'Unknown / To be provided',
-    coverageArea: '48.5 Hectares',
+    coverageArea: '119.8 Acres',
     soilClassification: 'Loamy Silt',
     currentCrop: 'Tomato',
     topography: 'Unknown / To be provided',

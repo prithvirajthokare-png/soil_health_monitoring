@@ -11,7 +11,7 @@ export const LOCATION_LOC_001 = {
     formatted: '13°00\'34.1"N 74°47\'42.9"E'
   },
   elevation: 'Unknown / To be provided',
-  coverageArea: '48.5 Hectares',
+  coverageArea: '119.8 Acres',
   healthScore: 100,
   healthStatus: 'Optimal'
 };

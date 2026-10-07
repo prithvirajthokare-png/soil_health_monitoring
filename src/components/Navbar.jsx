@@ -31,7 +31,7 @@ export default function Navbar({
   setActiveTab 
 }) {
   const locId = locationData?.id || selectedLocationId;
-  const locName = locationData?.name || (locId === 'LOC_001' ? 'Idea Factory' : 'Test Location');
+  const locName = locationData?.farmerName ? `${locationData.farmerName} Farm` : (locationData?.name || (locId === 'LOC_001' ? 'Idea Factory' : 'Demo Location'));
 
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
@@ -197,7 +197,7 @@ export default function Navbar({
 
             {/* Location Selector Dropdown */}
             {showLocationMenu && (
-              <div className="absolute left-0 top-10 w-56 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
+              <div className="absolute left-0 top-10 w-64 max-h-[70vh] overflow-y-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
                 <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800">
                   Select Field Location
                 </div>
@@ -215,9 +215,9 @@ export default function Navbar({
                     }`}
                   >
                     <div>
-                      <div className="font-mono font-bold">{l.id}</div>
-                      <div className="text-[11px] text-slate-400">{l.name}</div>
-                    </div>
+                        <div className="font-bold truncate max-w-[180px]">{l.farmerName ? `${l.farmerName} Farm` : (l.name || 'Demo Location')}</div>
+                        <div className="text-[10px] text-slate-400 uppercase">{l.id === 'LOC_001' ? 'Real' : 'Simulated'} &bull; {l.village || l.id}</div>
+                      </div>
                     {l.id === locId && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     )}

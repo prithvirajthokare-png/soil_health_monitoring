@@ -131,7 +131,11 @@ function MapInstanceCapture({ setMap }) { const map = useMap(); useEffect(() => 
 
 function MapController({ targetLat, targetLng, targetId, boundsToFit, onZoomChange, onMouseMoveCoord }) {
   const map = useMap();
-  const lastAnimatedIdRef = useRef(null);
+  // Initialize to the current target: MapContainer's `center` prop already places the
+  // map there on mount, so skip animating to it again. Calling flyTo on the very first
+  // mount is redundant and can throw "Invalid LatLng (NaN, NaN)" because the map
+  // container may still have zero size before layout/CSS has applied.
+  const lastAnimatedIdRef = useRef(targetId);
 
   // Smoothly move map when target location or bounds change
   useEffect(() => {

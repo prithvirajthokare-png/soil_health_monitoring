@@ -1,37 +1,33 @@
-from typing import Optional, List, Tuple
+from typing import Optional, List
 from sqlalchemy.orm import Session
 
 from backend.app.models.location import Location
-from backend.app.models.crop import CropStageTarget
 from backend.app.models.reading import SensorReading
 from backend.app.schemas.evaluation import SoilHealthEvaluation, MetricEvaluation
 from backend.app.schemas.reading import SensorReadingResponse
-from backend.app.schemas.crop import CropStageTargetResponse
+
+# Generic, crop-agnostic soil health thresholds.
+MOISTURE_TRIGGER_PCT = 20.0
+MOISTURE_MAX_PCT = 45.0
+PH_MIN = 6.0
+PH_MAX = 7.5
+EC_MAX_DS_M = 2.0
+TEMP_MIN_C = 15.0
+TEMP_MAX_C = 32.0
+NITROGEN_TARGET_MG_KG = 40.0
+PHOSPHORUS_TARGET_MG_KG = 20.0
+POTASSIUM_TARGET_MG_KG = 100.0
 
 def evaluate_soil_health(db: Session, location: Location, reading: Optional[SensorReading]) -> SoilHealthEvaluation:
     """
-    Evaluates real-time sensor reading against the location's active crop stage targets.
+    Evaluates a real-time sensor reading against fixed, generic soil health thresholds.
     Computes a normalized composite Soil Health Index (0-100) and generated recommendations.
     """
-    # 1. Fetch active crop target
-    plant_type = (location.current_crop or "tomato").lower()
     growth_stage = location.growth_stage if location.growth_stage is not None else 1
-
-    target = db.query(CropStageTarget).filter(
-        CropStageTarget.plant_type == plant_type,
-        CropStageTarget.growth_stage == growth_stage
-    ).first()
-
-    # Fallback to stage 0 or default if exact stage not found
-    if not target:
-        target = db.query(CropStageTarget).filter(
-            CropStageTarget.plant_type == plant_type
-        ).first()
-
-    stage_name = target.stage_name if target else "vegetative"
+    stage_name = "General"
     evaluations: List[MetricEvaluation] = []
     recommendations: List[str] = []
-    
+
     score = 100
     irrigation_required = False
     salinity_stress = False
@@ -48,13 +44,13 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
             irrigation_required=False,
             salinity_stress=False,
             latest_reading=None,
-            stage_targets=CropStageTargetResponse.model_validate(target) if target else None,
+            stage_targets=None,
             evaluations=[],
             recommendations=["Connect IoT sensor nodes to begin receiving telemetry."]
         )
 
     # 1. Evaluate Moisture (VWC %)
-    trig = target.irrigation_trigger_pct if target else 20.0
+    trig = MOISTURE_TRIGGER_PCT
     if reading.moisture_pct < trig:
         irrigation_required = True
         deficit = trig - reading.moisture_pct
@@ -65,7 +61,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
             current_value=reading.moisture_pct,
             target_value=trig + 8.0,
             min_bound=trig,
-            max_bound=45.0,
+            max_bound=MOISTURE_MAX_PCT,
             unit="%",
             status="critical" if reading.moisture_pct < (trig - 5.0) else "warning",
             message=f"Soil moisture ({reading.moisture_pct}%) is below irrigation trigger threshold ({trig}%)."
@@ -77,15 +73,15 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
             current_value=reading.moisture_pct,
             target_value=trig + 8.0,
             min_bound=trig,
-            max_bound=45.0,
+            max_bound=MOISTURE_MAX_PCT,
             unit="%",
             status="optimal",
-            message=f"Soil moisture ({reading.moisture_pct}%) is optimal for {stage_name} stage (trigger: {trig}%)."
+            message=f"Soil moisture ({reading.moisture_pct}%) is optimal (trigger: {trig}%)."
         ))
 
     # 2. Evaluate pH
-    ph_min = target.ph_min if target else 6.0
-    ph_max = target.ph_max if target else 7.5
+    ph_min = PH_MIN
+    ph_max = PH_MAX
     if reading.ph < ph_min:
         score -= 15
         evaluations.append(MetricEvaluation(
@@ -125,7 +121,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
         ))
 
     # 3. Evaluate Electrical Conductivity / Salinity
-    ece_max = target.ece_threshold_ds_m if target else 2.0
+    ece_max = EC_MAX_DS_M
     if reading.ec_ds_m > ece_max:
         salinity_stress = True
         score -= 20
@@ -155,8 +151,6 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
     # 4. Evaluate NPK Macronutrients
     def check_nutrient(name, val, target_val, weight=8):
         nonlocal score
-        if not target_val or target_val <= 0:
-            return
         diff_pct = (val - target_val) / target_val
         if diff_pct < -0.25:
             score -= weight
@@ -168,7 +162,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
                 status="deficient",
                 message=f"{name} ({val} mg/kg) is deficient relative to target ({target_val} mg/kg)."
             ))
-            recommendations.append(f"Supplement {name} fertilizer to meet target {target_val} mg/kg for {stage_name} stage.")
+            recommendations.append(f"Supplement {name} fertilizer to meet target {target_val} mg/kg.")
         elif diff_pct > 0.35:
             score -= int(weight * 0.5)
             evaluations.append(MetricEvaluation(
@@ -189,14 +183,13 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
                 message=f"{name} ({val} mg/kg) is well balanced for target ({target_val} mg/kg)."
             ))
 
-    if target:
-        check_nutrient("Nitrogen (N)", reading.nitrogen_mg_kg, target.n_target_mg_kg, 10)
-        check_nutrient("Phosphorus (P)", reading.phosphorus_mg_kg, target.p_target_mg_kg, 8)
-        check_nutrient("Potassium (K)", reading.potassium_mg_kg, target.k_target_mg_kg, 8)
+    check_nutrient("Nitrogen (N)", reading.nitrogen_mg_kg, NITROGEN_TARGET_MG_KG, 10)
+    check_nutrient("Phosphorus (P)", reading.phosphorus_mg_kg, PHOSPHORUS_TARGET_MG_KG, 8)
+    check_nutrient("Potassium (K)", reading.potassium_mg_kg, POTASSIUM_TARGET_MG_KG, 8)
 
     # 5. Evaluate Temperature
-    t_min = target.temp_min_c if target else 15.0
-    t_max = target.temp_max_c if target else 32.0
+    t_min = TEMP_MIN_C
+    t_max = TEMP_MAX_C
     if reading.temperature_c < t_min:
         score -= 5
         evaluations.append(MetricEvaluation(
@@ -206,7 +199,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
             max_bound=t_max,
             unit="°C",
             status="warning",
-            message=f"Soil temp ({reading.temperature_c}°C) is cool for {plant_type} (min {t_min}°C)."
+            message=f"Soil temp ({reading.temperature_c}°C) is cool (min {t_min}°C)."
         ))
     elif reading.temperature_c > t_max:
         score -= 5
@@ -232,7 +225,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
 
     # Clamp health score between 0 and 100
     final_score = max(0, min(100, score))
-    
+
     if final_score >= 80:
         health_status = "Optimal"
     elif final_score >= 60:
@@ -243,7 +236,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
         health_status = "Critical"
 
     if not recommendations:
-        recommendations.append(f"All soil health metrics for {location.name} are within optimal agronomic targets.")
+        recommendations.append(f"All soil health metrics for {location.name} are within optimal generic targets.")
 
     return SoilHealthEvaluation(
         location_id=location.id,
@@ -256,7 +249,7 @@ def evaluate_soil_health(db: Session, location: Location, reading: Optional[Sens
         irrigation_required=irrigation_required,
         salinity_stress=salinity_stress,
         latest_reading=SensorReadingResponse.model_validate(reading),
-        stage_targets=CropStageTargetResponse.model_validate(target) if target else None,
+        stage_targets=None,
         evaluations=evaluations,
         recommendations=recommendations
     )

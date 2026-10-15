@@ -9,3 +9,4 @@ venv/
 *.sqlite
 *.sqlite3
 dist/
+.claude/

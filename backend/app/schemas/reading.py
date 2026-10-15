@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class SensorReadingBase(BaseModel):
     moisture_pct: float = Field(..., ge=0.0, le=100.0, description="Volumetric Water Content %")
-    temperature_c: float = Field(..., ge=-20.0, le=70.0, description="Soil Core Temperature in °C")
+    temperature_c: float = Field(..., ge=-20.0, le=200.0, description="Soil Core Temperature in °C")
     ph: float = Field(..., ge=0.0, le=14.0, description="Soil pH value")
     ec_ds_m: float = Field(..., ge=0.0, description="Electrical Conductivity in dS/m")
     nitrogen_mg_kg: float = Field(..., ge=0.0, description="Nitrogen (N) in mg/kg")

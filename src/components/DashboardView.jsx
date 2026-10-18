@@ -6,6 +6,7 @@ export default function DashboardView({
   latestReading, 
   evaluationData, 
   locationsList,
+  onSelectLocation,
   setActiveTab 
 }) {
   const stats = useMemo(() => {
@@ -55,39 +56,50 @@ export default function DashboardView({
   }, [locationsList]);
 
   return (
-    <div className="flex-1 w-full h-full overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 lg:p-8 space-y-8 font-sans">
+    <div className="flex-1 w-full h-full overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 lg:p-8 space-y-6 font-sans">
       
       {/* Header */}
-      <div className="max-w-7xl mx-auto flex flex-col gap-2 border-b border-slate-800 pb-6">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-50">
-          Soil Health Monitoring System
-        </h1>
-        <p className="text-sm md:text-base text-slate-400 max-w-3xl">
-          A LoRaWAN-based soil monitoring platform for distributed agricultural locations.
-        </p>
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-50">
+            Soil Health Monitoring System
+          </h1>
+          <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl">
+            Real-time IoT telemetry, agronomic evaluation, and spatial distribution across monitored agricultural sites.
+          </p>
+        </div>
+
+        <button
+          onClick={() => setActiveTab('map')}
+          className="inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl shadow-lg shadow-emerald-950 text-xs font-bold transition-all shrink-0"
+        >
+          <Map className="w-4 h-4" />
+          <span>Open Live Map</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Statistics Cards */}
         <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex flex-col justify-between">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-4 shadow-xl flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Monitored Sites</span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Total Sites</span>
               <MapPin className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-3xl font-bold font-mono text-slate-100">{stats.total}</div>
           </div>
 
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex flex-col justify-between border-emerald-500/30">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-4 shadow-xl flex flex-col justify-between border-emerald-500/30">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Live Sites</span>
+              <span className="text-[10px] uppercase tracking-wider text-emerald-400 font-semibold">Live IoT Sites</span>
               <Activity className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-3xl font-bold font-mono text-emerald-400">{stats.live}</div>
           </div>
 
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex flex-col justify-between border-blue-500/30">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-4 shadow-xl flex flex-col justify-between border-blue-500/30">
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-blue-400 font-semibold">Demo Sites</span>
               <Users className="w-4 h-4 text-blue-400" />
@@ -95,32 +107,21 @@ export default function DashboardView({
             <div className="text-3xl font-bold font-mono text-blue-400">{stats.demo}</div>
           </div>
 
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl flex flex-col justify-between">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-4 shadow-xl flex flex-col justify-between">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Active Real Sensors</span>
+              <span className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Active Sensors</span>
               <Activity className="w-4 h-4 text-emerald-400" />
             </div>
             <div className="text-3xl font-bold font-mono text-slate-100">{stats.activeSensors}</div>
           </div>
         </section>
 
-        {/* Action / Map Area */}
-        <section className="py-2">
-          <button
-            onClick={() => setActiveTab('map')}
-            className="w-full md:w-auto flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-3 rounded-xl shadow-xl shadow-emerald-900/30 transition-all font-bold text-base"
-          >
-            <span>Open Live Map</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </section>
-
         {/* Charts Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* Health Distribution */}
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-xl">
-            <h2 className="text-sm font-bold text-slate-300 mb-6 uppercase tracking-wider">Health Distribution</h2>
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl">
+            <h2 className="text-xs font-bold text-slate-300 mb-5 uppercase tracking-wider">Health Distribution</h2>
             <div className="space-y-4">
               {[
                 { label: 'Healthy', value: stats.healthy, color: 'bg-emerald-500' },
@@ -141,8 +142,8 @@ export default function DashboardView({
           </div>
 
           {/* Alert Summary */}
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-xl">
-            <h2 className="text-sm font-bold text-slate-300 mb-6 uppercase tracking-wider">Alert Summary</h2>
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl">
+            <h2 className="text-xs font-bold text-slate-300 mb-5 uppercase tracking-wider">Alert Summary</h2>
             <div className="flex h-32 items-end justify-around gap-2">
               {[
                 { label: 'Healthy', value: stats.healthy, color: 'bg-emerald-500', hColor: 'text-emerald-400' },
@@ -162,9 +163,9 @@ export default function DashboardView({
           </div>
 
           {/* Crop Distribution */}
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-xl">
-            <h2 className="text-sm font-bold text-slate-300 mb-6 uppercase tracking-wider">Crop Distribution</h2>
-            <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl">
+            <h2 className="text-xs font-bold text-slate-300 mb-5 uppercase tracking-wider">Crop Distribution</h2>
+            <div className="space-y-3 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
               {stats.crops.map(([crop, count]) => (
                 <div key={crop}>
                   <div className="flex justify-between text-xs mb-1">
@@ -172,7 +173,7 @@ export default function DashboardView({
                     <span className="font-mono text-slate-300">{count}</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${(count / stats.crops[0][1]) * 100}%` }}></div>
+                    <div className="bg-blue-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${stats.crops.length > 0 ? (count / stats.crops[0][1]) * 100 : 0}%` }}></div>
                   </div>
                 </div>
               ))}
@@ -180,9 +181,9 @@ export default function DashboardView({
           </div>
 
           {/* State Distribution */}
-          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-xl">
-            <h2 className="text-sm font-bold text-slate-300 mb-6 uppercase tracking-wider">State Distribution</h2>
-            <div className="space-y-3 max-h-64 overflow-y-auto pr-2 custom-scrollbar">
+          <div className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl">
+            <h2 className="text-xs font-bold text-slate-300 mb-5 uppercase tracking-wider">State Distribution</h2>
+            <div className="space-y-3 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
               {stats.states.map(([state, count]) => (
                 <div key={state}>
                   <div className="flex justify-between text-xs mb-1">
@@ -190,7 +191,7 @@ export default function DashboardView({
                     <span className="font-mono text-slate-300">{count}</span>
                   </div>
                   <div className="w-full bg-slate-800 rounded-full h-1.5">
-                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${(count / stats.states[0][1]) * 100}%` }}></div>
+                    <div className="bg-purple-500 h-1.5 rounded-full transition-all duration-1000" style={{ width: `${stats.states.length > 0 ? (count / stats.states[0][1]) * 100 : 0}%` }}></div>
                   </div>
                 </div>
               ))}
@@ -200,32 +201,32 @@ export default function DashboardView({
         </div>
 
         {/* Recent/Critical Alerts */}
-        <section className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-6 shadow-xl mb-12">
-          <h2 className="text-sm font-bold text-slate-300 mb-4 uppercase tracking-wider flex items-center gap-2">
+        <section className="bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 p-5 shadow-xl mb-8">
+          <h2 className="text-xs font-bold text-slate-300 mb-4 uppercase tracking-wider flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-500" />
-            Recent Alerts
+            Active Alerts
           </h2>
           {stats.alerts.length === 0 ? (
-            <div className="text-sm text-slate-500 p-4 border border-dashed border-slate-800 rounded-lg text-center">
+            <div className="text-xs text-slate-500 p-4 border border-dashed border-slate-800 rounded-lg text-center">
               No active alerts detected across the network.
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-xs">
                 <thead>
-                  <tr className="border-b border-slate-800 text-slate-500">
-                    <th className="pb-3 font-semibold">Farm</th>
-                    <th className="pb-3 font-semibold">Crop</th>
-                    <th className="pb-3 font-semibold">Severity</th>
-                    <th className="pb-3 font-semibold text-right">Action</th>
+                  <tr className="border-b border-slate-800 text-slate-500 uppercase text-[10px]">
+                    <th className="pb-2.5 font-semibold">Farm</th>
+                    <th className="pb-2.5 font-semibold">Crop</th>
+                    <th className="pb-2.5 font-semibold">Severity</th>
+                    <th className="pb-2.5 font-semibold text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {stats.alerts.slice(0, 5).map((alert) => (
                     <tr key={alert.id} className="border-b border-slate-800/50 last:border-0">
-                      <td className="py-3 font-medium text-slate-200">{alert.farmName || alert.name}</td>
-                      <td className="py-3 text-slate-400 capitalize">{alert.crop || alert.current_crop}</td>
-                      <td className="py-3">
+                      <td className="py-2.5 font-medium text-slate-200">{alert.farmName || alert.name}</td>
+                      <td className="py-2.5 text-slate-400 capitalize">{alert.crop || alert.current_crop}</td>
+                      <td className="py-2.5">
                         <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                           alert.alertStatus === 'CRITICAL' || alert.healthStatus === 'Critical'
                             ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
@@ -234,26 +235,15 @@ export default function DashboardView({
                           {alert.alertStatus === 'CRITICAL' || alert.healthStatus === 'Critical' ? 'Critical' : 'Warning'}
                         </span>
                       </td>
-                      <td className="py-3 text-right">
+                      <td className="py-2.5 text-right">
                         <button 
                           onClick={() => {
+                            onSelectLocation?.(alert.id);
                             setActiveTab('map');
-                            // Let the map render before simulating selection
-                            setTimeout(() => {
-                                const btn = document.querySelector(`[title^="Target ${alert.id}"]`);
-                                if (!btn) {
-                                  // Find in locations list and click
-                                  const btns = Array.from(document.querySelectorAll('button'));
-                                  const sidebarBtn = btns.find(b => b.innerText.includes(alert.farmName || alert.id));
-                                  if (sidebarBtn) sidebarBtn.click();
-                                } else {
-                                  btn.click();
-                                }
-                            }, 50);
                           }}
-                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300"
+                          className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors"
                         >
-                          View Location
+                          View on Map →
                         </button>
                       </td>
                     </tr>

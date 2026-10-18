@@ -96,91 +96,84 @@ export default function Navbar({
   ];
 
   return (
-    <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 text-slate-100 z-30 shrink-0 px-4 py-2.5">
-      <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
+    <header className="bg-slate-900/95 backdrop-blur-md border-b border-slate-800 text-slate-100 z-30 shrink-0 px-3 md:px-5 py-2 w-full max-w-full">
+      <div className="w-full flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Brand & System Title */}
         <div 
           onClick={() => setActiveTab(isFarmer ? 'user-dashboard' : 'dashboard')}
-          className="flex items-center gap-3 cursor-pointer group"
+          className="flex items-center gap-2.5 cursor-pointer group shrink-0"
           title="Go to Dashboard Overview"
         >
-          <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-lg shadow-emerald-900/40 ring-1 ring-emerald-400/30 group-hover:scale-105 transition-transform">
-            <Sprout className="w-6 h-6 text-white" />
-            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-slate-900 animate-pulse"></span>
+          <div className="relative flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-md shadow-emerald-900/40 ring-1 ring-emerald-400/30 group-hover:scale-105 transition-transform">
+            <Sprout className="w-4 h-4 text-white" />
+            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full ring-2 ring-slate-900 animate-pulse"></span>
           </div>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="font-bold text-lg tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-green-400 bg-clip-text text-transparent">
-                TerraPulse
-              </h1>
-              <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                Soil Health OS
-              </span>
-            </div>
-            <p className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-              <span>FastAPI Backend Live</span>
-              <span className="text-slate-600">•</span>
-              <span className="text-slate-400">Agricultural GIS Node</span>
-            </p>
+          <div className="flex items-center gap-1.5">
+            <h1 className="font-bold text-base tracking-tight bg-gradient-to-r from-emerald-400 via-teal-300 to-green-400 bg-clip-text text-transparent">
+              TerraPulse
+            </h1>
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 hidden sm:inline-block">
+              v2.0
+            </span>
           </div>
         </div>
 
-        {/* Center Navigation Tabs & Active Location Selector */}
-        <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 shadow-inner">
+        {/* Center Navigation Tabs */}
+        <nav className="flex items-center gap-1 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 shadow-inner overflow-x-auto no-scrollbar">
           
           {/* Navigation Item: Farmer Dashboard vs Admin Dashboard */}
           {isFarmer ? (
             <button 
               onClick={() => setActiveTab('user-dashboard')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'user-dashboard'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'user-dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>My Farm</span>
             </button>
           ) : (
             <button 
               onClick={() => setActiveTab('dashboard')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'dashboard'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Dashboard</span>
             </button>
           )}
 
-          {/* Navigation Item: Live Map */}
+          {/* Navigation Item: Map */}
           <button 
             onClick={() => setActiveTab('map')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'map'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Map className={`w-3.5 h-3.5 ${activeTab === 'map' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>{isFarmer ? 'Farm Map' : 'Live Map'}</span>
+            <Map className="w-3.5 h-3.5" />
+            <span>Map</span>
           </button>
           
           {/* Navigation Item: Locations (Admin/Guest only) */}
           {!isFarmer && (
             <button 
               onClick={() => setActiveTab('locations')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'locations'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
               }`}
             >
-              <MapPin className={`w-3.5 h-3.5 ${activeTab === 'locations' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <MapPin className="w-3.5 h-3.5" />
               <span>Locations</span>
             </button>
           )}
@@ -188,13 +181,13 @@ export default function Navbar({
           {/* Navigation Item: Alerts */}
           <button 
             onClick={() => setActiveTab('alerts')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'alerts'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Bell className={`w-3.5 h-3.5 ${activeTab === 'alerts' ? 'text-emerald-200' : 'text-slate-400'}`} />
+            <Bell className="w-3.5 h-3.5" />
             <span>Alerts</span>
           </button>
 
@@ -202,13 +195,13 @@ export default function Navbar({
           {isAdmin && (
             <button 
               onClick={() => setActiveTab('admin-hub')}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
                 activeTab === 'admin-hub'
-                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  ? 'bg-purple-600 text-white shadow-sm'
                   : 'text-purple-300 hover:text-purple-100 hover:bg-purple-950/40'
               }`}
             >
-              <ShieldCheck className={`w-3.5 h-3.5 ${activeTab === 'admin-hub' ? 'text-emerald-200' : 'text-purple-400'}`} />
+              <ShieldCheck className="w-3.5 h-3.5" />
               <span>Admin Hub</span>
             </button>
           )}
@@ -216,35 +209,38 @@ export default function Navbar({
           {/* Navigation Item: Our Team */}
           <button 
             onClick={() => setActiveTab('team')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'team'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                ? 'bg-emerald-600 text-white shadow-sm'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
             }`}
           >
-            <Users className={`w-3.5 h-3.5 ${activeTab === 'team' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Our Team</span>
+            <Users className="w-3.5 h-3.5" />
+            <span>Team</span>
           </button>
+        </nav>
 
-          <div className="hidden lg:block h-4 w-px bg-slate-800 mx-1"></div>
-
+        {/* Right Actions: Farm Selector, CSV Export, Sync, User Profile */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          
           {/* Interactive Multi-Location Selector */}
-          <div className="relative block" ref={locationRef}>
+          <div className="relative" ref={locationRef}>
             <button
               onClick={() => setShowLocationMenu(!showLocationMenu)}
-              className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700/60 text-xs font-medium transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 text-xs font-medium transition-colors"
               title="Select Active Field Location"
             >
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping-slow"></span>
-              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
               <span className="font-mono font-bold text-emerald-400">{locId}</span>
-              <span className="text-slate-300 font-semibold truncate max-w-[120px]">({locName})</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <span className="text-slate-300 font-medium truncate max-w-[80px] xl:max-w-[120px] hidden md:inline">
+                ({locName})
+              </span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {/* Location Selector Dropdown */}
             {showLocationMenu && (
-              <div className="absolute left-0 top-10 w-64 max-h-[70vh] overflow-y-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
+              <div className="absolute right-0 top-full mt-1.5 w-64 max-h-[70vh] overflow-y-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
                 <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800 flex items-center justify-between">
                   <span>{isFarmer ? 'Your Assigned Farm(s)' : 'Select Field Location'}</span>
                   <span className="text-emerald-400 font-mono font-bold">{locationsList.length}</span>
@@ -274,26 +270,22 @@ export default function Navbar({
               </div>
             )}
           </div>
-        </div>
 
-        {/* Right Actions: User Profile / Logout, Download Data, Sync */}
-        <div className="flex items-center gap-2.5">
-          
           {/* Download Data Dropdown Control */}
           <div className="relative" ref={downloadRef}>
             <button
               onClick={() => setShowDownloadMenu(!showDownloadMenu)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-all shadow-sm"
+              className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 text-slate-200 border border-slate-700/80 text-xs font-medium transition-all shadow-sm"
               title="Download historical telemetry as CSV"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Export</span>
-              <ChevronDown className="w-3 h-3 text-slate-400" />
+              <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+              <span className="hidden lg:inline">Export</span>
+              <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
 
             {/* Dropdown Menu */}
             {showDownloadMenu && (
-              <div className="absolute right-0 top-10 w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50 text-xs space-y-1">
+              <div className="absolute right-0 top-full mt-1.5 w-60 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-2 z-50 text-xs space-y-1">
                 <div className="px-2 py-1.5 border-b border-slate-800 text-[11px] font-semibold text-slate-400 flex items-center justify-between">
                   <span>Export Telemetry (CSV)</span>
                   <span className="font-mono text-emerald-400 text-[10px]">{locId}</span>
@@ -344,30 +336,21 @@ export default function Navbar({
           <button 
             onClick={onRefresh}
             title="Fetch fresh telemetry from FastAPI backend"
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 active:bg-slate-900 text-slate-200 border border-slate-700 text-xs font-medium transition-all"
+            className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700/80 active:bg-slate-900 text-slate-200 border border-slate-700/80 text-xs font-medium transition-all"
           >
             <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
-            <span className="hidden sm:inline">Sync</span>
+            <span className="hidden lg:inline">Sync</span>
           </button>
 
-          {/* Reset / Focus Button */}
-          {activeTab === 'map' ? (
+          {/* Reset / Focus Button (on map view) */}
+          {activeTab === 'map' && (
             <button 
               onClick={onResetView}
               title={`Center Map on ${locId}`}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-all"
+              className="flex items-center gap-1 px-2 py-1 sm:px-2.5 sm:py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-all"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Locate</span>
-            </button>
-          ) : (
-            <button 
-              onClick={() => setActiveTab('map')}
-              title="Go to Map View"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-all"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span>Map</span>
+              <span className="hidden md:inline">Locate</span>
             </button>
           )}
 
@@ -376,27 +359,26 @@ export default function Navbar({
             {currentUser ? (
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700 text-xs transition-all shadow-sm"
+                className="flex items-center gap-1.5 pl-1.5 pr-2 py-1 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700/80 text-xs transition-all shadow-sm"
+                title="Account Settings & Role"
               >
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${
-                  isAdmin ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
+                  isAdmin ? 'bg-purple-600 text-white' : 'bg-emerald-600 text-white'
                 }`}>
                   {currentUser.username[0]?.toUpperCase()}
                 </div>
-                <div className="text-left hidden md:block">
-                  <div className="font-bold text-slate-200 leading-tight truncate max-w-[100px]">
-                    {currentUser.full_name || currentUser.username}
-                  </div>
-                  <div className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
-                    {isAdmin ? 'ADMIN' : 'FARMER'}
-                  </div>
-                </div>
-                <ChevronDown className="w-3 h-3 text-slate-400" />
+                <span className="font-semibold text-slate-200 truncate max-w-[80px] hidden sm:inline">
+                  {currentUser.username}
+                </span>
+                <span className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 font-bold hidden xl:inline">
+                  {isAdmin ? 'ADMIN' : 'FARMER'}
+                </span>
+                <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
             ) : (
               <button
                 onClick={onShowLogin}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950"
               >
                 <Lock className="w-3.5 h-3.5" />
                 <span>Sign In</span>
@@ -405,7 +387,7 @@ export default function Navbar({
 
             {/* User Dropdown */}
             {showUserMenu && currentUser && (
-              <div className="absolute right-0 top-11 w-56 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-2 z-50 text-xs space-y-2">
+              <div className="absolute right-0 top-full mt-1.5 w-56 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-2 z-50 text-xs space-y-1.5">
                 <div className="p-2 bg-slate-950/80 rounded-xl border border-slate-800/80">
                   <div className="font-bold text-slate-100">{currentUser.full_name || currentUser.username}</div>
                   <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser.email}</div>

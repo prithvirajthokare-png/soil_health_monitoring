@@ -371,7 +371,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
+    <div className="flex flex-col h-screen w-full max-w-full bg-slate-950 text-slate-100 overflow-hidden select-none">
       <GlobalAlert 
         locationData={locationData} 
         evaluationData={evaluationData}
@@ -429,6 +429,7 @@ export default function App() {
               latestReading={latestReading}
               evaluationData={evaluationData}
               locationsList={visibleLocations}
+              onSelectLocation={handleSelectLocation}
               setActiveTab={setActiveTab}
             />
           </div>

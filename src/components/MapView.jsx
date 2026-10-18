@@ -257,18 +257,18 @@ export default function MapView({
       
       {/* Top Banner Notice */}
       {mapInfoBanner && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 text-slate-200 px-3.5 py-1.5 rounded-full shadow-xl flex items-center gap-2.5 text-xs">
-          <span className="flex h-2 w-2 relative">
+        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-20 bg-slate-900/90 backdrop-blur-md border border-emerald-500/30 text-slate-200 px-3 py-1 rounded-full shadow-xl flex items-center gap-2 text-xs max-w-[calc(100vw-32px)] overflow-hidden">
+          <span className="flex h-2 w-2 relative shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
           </span>
-          <span className="font-medium">Active Site:</span>
-          <span className="text-emerald-400 font-mono font-bold">{locId} ({locName})</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-400 font-mono text-[11px]">{locationsList.length} Monitored Sites</span>
+          <span className="font-medium shrink-0 hidden sm:inline">Active Site:</span>
+          <span className="text-emerald-400 font-mono font-bold truncate max-w-[200px]">{locId} ({locName})</span>
+          <span className="text-slate-600 hidden md:inline">|</span>
+          <span className="text-slate-400 font-mono text-[11px] shrink-0 hidden md:inline">{locationsList.length} Sites</span>
           <button 
             onClick={() => setMapInfoBanner(false)}
-            className="text-slate-400 hover:text-slate-200 ml-1 font-bold"
+            className="text-slate-400 hover:text-slate-200 ml-1 font-bold shrink-0"
             title="Dismiss"
           >
             ×

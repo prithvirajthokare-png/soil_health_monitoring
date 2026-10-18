@@ -136,10 +136,10 @@ export default function UserDashboardView({
       <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Top Highlight Cards: Health Score & Farm Status */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Health Index Card */}
-          <div className="md:col-span-5 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
+          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
             <div className="flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
@@ -159,14 +159,14 @@ export default function UserDashboardView({
               </div>
             </div>
 
-            <div className="py-6 flex items-center gap-6">
-              <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-slate-800 bg-slate-950/60 shadow-inner">
+            <div className="py-6 flex flex-col sm:flex-row items-center gap-6">
+              <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-slate-800 bg-slate-950/60 shadow-inner shrink-0">
                 <div className="text-center">
                   <div className="text-3xl font-black font-mono text-emerald-400">{healthScore}</div>
                   <div className="text-[10px] uppercase font-bold text-slate-500">Out of 100</div>
                 </div>
               </div>
-              <div className="space-y-2 text-xs flex-1">
+              <div className="space-y-2 text-xs w-full">
                 <div className="flex justify-between text-slate-300">
                   <span>Current Crop:</span>
                   <span className="font-bold text-slate-100 capitalize">{loc.crop || loc.current_crop || 'Tomato'}</span>
@@ -202,7 +202,7 @@ export default function UserDashboardView({
           </div>
 
           {/* Actionable Recommendations Card */}
-          <div className="md:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
             <div>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">

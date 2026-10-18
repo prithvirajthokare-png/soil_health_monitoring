@@ -1,6 +1,12 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api/v1';
+// Detect runtime environment
+const isBrowser = typeof window !== 'undefined';
+const isLocal = isBrowser && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+const hasCustomApiUrl = Boolean(import.meta.env.VITE_API_URL);
+const shouldAttemptBackend = hasCustomApiUrl || isLocal;
 
-// Built-in Demo Accounts (Available both on backend and as resilient offline fallback)
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocal ? 'http://127.0.0.1:8000/api/v1' : '');
+
+// Built-in Demo Accounts (Available both on backend and as resilient offline/Vercel fallback)
 const BUILTIN_USERS = [
   {
     id: 1,
@@ -101,42 +107,43 @@ export function getAuthHeaders() {
 export async function loginUser(username, password) {
   const cleanUsername = (username || '').trim().toLowerCase();
 
-  // 1. Attempt Live Backend Login
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: cleanUsername, password })
-    });
+  // 1. Attempt Live Backend Login if running locally or custom backend URL is configured
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: cleanUsername, password })
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      setStoredToken(data.access_token);
-      setStoredUser(data.user);
-      return data;
-    }
+      if (response.ok) {
+        const data = await response.json();
+        setStoredToken(data.access_token);
+        setStoredUser(data.user);
+        return data;
+      }
 
-    if (response.status === 401) {
-      throw new Error('Incorrect username or password');
-    }
+      if (response.status === 401) {
+        throw new Error('Incorrect username or password');
+      }
 
-    if (response.status === 403) {
-      let detail = 'Account is deactivated';
-      try {
-        const errJson = await response.json();
-        if (errJson.detail) detail = errJson.detail;
-      } catch (e) {}
-      throw new Error(detail);
+      if (response.status === 403) {
+        let detail = 'Account is deactivated';
+        try {
+          const errJson = await response.json();
+          if (errJson.detail) detail = errJson.detail;
+        } catch (e) {}
+        throw new Error(detail);
+      }
+    } catch (err) {
+      if (err.message && (err.message.includes('Incorrect') || err.message.includes('deactivated'))) {
+        throw err;
+      }
+      console.warn('[API Service] Backend unavailable or route not found, falling back to local demo authentication:', err.message);
     }
-    // If response was 404 / 500 / 502, fall through to resilient offline fallback
-  } catch (err) {
-    if (err.message && (err.message.includes('Incorrect') || err.message.includes('deactivated'))) {
-      throw err;
-    }
-    console.warn('[API Service] Backend unavailable or route not found, falling back to local demo authentication:', err.message);
   }
 
-  // 2. Resilient Offline / Demo Fallback
+  // 2. Resilient Offline / Vercel Cloud Demo Fallback
   const storedUsers = getStoredLocalUsers();
   const allUsers = [...BUILTIN_USERS, ...storedUsers];
   const matched = allUsers.find(u => 
@@ -171,37 +178,39 @@ export async function registerUser(userData) {
   const cleanUsername = (userData.username || '').trim().toLowerCase();
   const cleanEmail = (userData.email || '').trim().toLowerCase();
 
-  // 1. Attempt Live Backend Registration
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData)
-    });
+  // 1. Attempt Live Backend Registration if reachable
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData)
+      });
 
-    if (response.ok) {
-      const data = await response.json();
-      setStoredToken(data.access_token);
-      setStoredUser(data.user);
-      return data;
-    }
+      if (response.ok) {
+        const data = await response.json();
+        setStoredToken(data.access_token);
+        setStoredUser(data.user);
+        return data;
+      }
 
-    if (response.status === 400) {
-      let detail = 'Registration failed';
-      try {
-        const errJson = await response.json();
-        if (errJson.detail) detail = errJson.detail;
-      } catch (e) {}
-      throw new Error(detail);
+      if (response.status === 400) {
+        let detail = 'Registration failed';
+        try {
+          const errJson = await response.json();
+          if (errJson.detail) detail = errJson.detail;
+        } catch (e) {}
+        throw new Error(detail);
+      }
+    } catch (err) {
+      if (err.message && err.message.includes('already')) {
+        throw err;
+      }
+      console.warn('[API Service] Backend unavailable for registration, using local fallback:', err.message);
     }
-  } catch (err) {
-    if (err.message && err.message.includes('already')) {
-      throw err;
-    }
-    console.warn('[API Service] Backend unavailable for registration, using local fallback:', err.message);
   }
 
-  // 2. Resilient Offline Registration Fallback
+  // 2. Resilient Offline / Vercel Registration Fallback
   const storedUsers = getStoredLocalUsers();
   const exists = [...BUILTIN_USERS, ...storedUsers].some(u => 
     u.username.toLowerCase() === cleanUsername || u.email.toLowerCase() === cleanEmail
@@ -249,23 +258,25 @@ export async function fetchCurrentUserProfile() {
   const token = getStoredToken();
   if (!token) return null;
 
-  try {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
-      headers: getAuthHeaders()
-    });
-    if (response.ok) {
-      const user = await response.json();
-      setStoredUser(user);
-      return user;
-    }
-    if (response.status === 401) {
-      setStoredToken(null);
-      setStoredUser(null);
-      return null;
-    }
-  } catch (e) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        const user = await response.json();
+        setStoredUser(user);
+        return user;
+      }
+      if (response.status === 401) {
+        setStoredToken(null);
+        setStoredUser(null);
+        return null;
+      }
+    } catch (e) {}
+  }
 
-  // Return stored user if backend is offline
+  // Return stored user if backend is offline or on Vercel
   return getStoredUser();
 }
 
@@ -277,14 +288,16 @@ export function logoutUser() {
 // ---------------- USER MANAGEMENT APIS (ADMIN ONLY) ----------------
 
 export async function fetchAllUsers() {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      headers: getAuthHeaders()
-    });
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
 
   // Fallback to local users
   const storedUsers = getStoredLocalUsers();
@@ -300,16 +313,18 @@ export async function fetchAllUsers() {
 }
 
 export async function createNewUser(userData) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(userData)
-    });
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(userData)
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
 
   // Local fallback
   const storedUsers = getStoredLocalUsers();
@@ -328,16 +343,18 @@ export async function createNewUser(userData) {
 }
 
 export async function updateUser(userId, updates) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(updates)
-    });
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(updates)
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
 
   // Local fallback
   const storedUsers = getStoredLocalUsers();
@@ -347,15 +364,17 @@ export async function updateUser(userId, updates) {
 }
 
 export async function deleteUser(userId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    if (response.ok) {
-      return true;
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return true;
+      }
+    } catch (err) {}
+  }
 
   const storedUsers = getStoredLocalUsers();
   saveStoredLocalUsers(storedUsers.filter(u => u.id !== userId));
@@ -363,16 +382,18 @@ export async function deleteUser(userId) {
 }
 
 export async function assignFarmToUser(userId, locationIds, roleOnFarm = 'owner') {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/farms`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ location_ids: locationIds, role_on_farm: roleOnFarm })
-    });
-    if (response.ok) {
-      return await response.json();
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/farms`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ location_ids: locationIds, role_on_farm: roleOnFarm })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
 
   const storedUsers = getStoredLocalUsers();
   const user = storedUsers.find(u => u.id === userId) || BUILTIN_USERS.find(u => u.id === userId);
@@ -387,15 +408,17 @@ export async function assignFarmToUser(userId, locationIds, roleOnFarm = 'owner'
 }
 
 export async function unassignFarmFromUser(userId, locationId) {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/farms/${locationId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    if (response.ok) {
-      return true;
-    }
-  } catch (err) {}
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/${userId}/farms/${locationId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return true;
+      }
+    } catch (err) {}
+  }
 
   const storedUsers = getStoredLocalUsers();
   const user = storedUsers.find(u => u.id === userId) || BUILTIN_USERS.find(u => u.id === userId);
@@ -410,51 +433,68 @@ export async function unassignFarmFromUser(userId, locationId) {
 // ---------------- ANALYTICS & COMPARISON APIS ----------------
 
 export async function fetchFarmComparison(locationIds = null) {
-  let url = `${API_BASE_URL}/analytics/comparison`;
-  if (locationIds && locationIds.length > 0) {
-    url += `?location_ids=${locationIds.join(',')}`;
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      let url = `${API_BASE_URL}/analytics/comparison`;
+      if (locationIds && locationIds.length > 0) {
+        url += `?location_ids=${locationIds.join(',')}`;
+      }
+      const response = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
   }
-  const response = await fetch(url, {
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) {
-    throw new Error(`Failed to fetch comparison analytics: ${response.statusText}`);
-  }
-  return response.json();
+
+  return null;
 }
 
 // ---------------- EXISTING TELEMETRY & LOCATIONS APIS (PRESERVED) ----------------
 
 export async function fetchLocationById(locationId = 'LOC_001') {
-  const response = await fetch(`${API_BASE_URL}/locations/${locationId}`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch location ${locationId}: ${response.statusText}`);
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const response = await fetch(`${API_BASE_URL}/locations/${locationId}`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch location ${locationId}: ${response.statusText}`);
+    }
+    return response.json();
   }
-  return response.json();
+  return null;
 }
 
 export async function fetchLatestReading(locationId = 'LOC_001') {
-  const response = await fetch(`${API_BASE_URL}/locations/${locationId}/latest`);
-  if (!response.ok) {
-    return null;
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const response = await fetch(`${API_BASE_URL}/locations/${locationId}/latest`);
+    if (!response.ok) {
+      return null;
+    }
+    return response.json();
   }
-  return response.json();
+  return null;
 }
 
 export async function fetchEvaluation(locationId = 'LOC_001') {
-  const response = await fetch(`${API_BASE_URL}/locations/${locationId}/evaluation`);
-  if (!response.ok) {
-    return null;
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const response = await fetch(`${API_BASE_URL}/locations/${locationId}/evaluation`);
+    if (!response.ok) {
+      return null;
+    }
+    return response.json();
   }
-  return response.json();
+  return null;
 }
 
 export async function fetchAllLocations() {
-  const response = await fetch(`${API_BASE_URL}/locations`);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch locations: ${response.statusText}`);
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const response = await fetch(`${API_BASE_URL}/locations`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch locations: ${response.statusText}`);
+    }
+    return response.json();
   }
-  return response.json();
+  return [];
 }
 
 export function getExportDataUrl(locationId = 'LOC_001', range = '1week') {
@@ -462,65 +502,78 @@ export function getExportDataUrl(locationId = 'LOC_001', range = '1week') {
 }
 
 export async function downloadHistoricalDataCsv(locationId = 'LOC_001', range = '1week') {
-  const url = getExportDataUrl(locationId, range);
-  
-  try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      let errorDetail = response.statusText;
-      try {
-        const errorJson = await response.json();
-        if (errorJson.detail) {
-          errorDetail = errorJson.detail;
-        }
-      } catch (e) {
-        // Ignore json parse error on non-json error responses
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = getExportDataUrl(locationId, range);
+    try {
+      const response = await fetch(url);
+      if (response.ok) {
+        const blob = await response.blob();
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = downloadUrl;
+        a.download = `${locationId}_telemetry_${range}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          a.remove();
+          window.URL.revokeObjectURL(downloadUrl);
+        }, 1000);
+        return true;
       }
-      throw new Error(`Export failed (${response.status}): ${errorDetail}`);
-    }
-
-    const blob = await response.blob();
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = downloadUrl;
-    a.download = `${locationId}_telemetry_${range}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    
-    setTimeout(() => {
-      a.remove();
-      window.URL.revokeObjectURL(downloadUrl);
-    }, 1000);
-    return true;
-  } catch (err) {
-    console.error('[API Service] Error downloading CSV:', err);
-    throw err;
+    } catch (err) {}
   }
+
+  // Fallback CSV generator for offline / Vercel cloud environment
+  const headers = "Timestamp (UTC),Location ID,Location Name,Crop,Moisture (%),Temperature (C),pH,EC (dS/m),Nitrogen (mg/kg),Phosphorus (mg/kg),Potassium (mg/kg),Battery (%)\n";
+  const now = new Date();
+  const rows = [];
+  const hoursCount = range === '1year' ? 365 : (range === '1month' ? 30 : 7);
+  for (let i = 0; i < hoursCount; i++) {
+    const d = new Date(now.getTime() - i * 3600 * 1000 * (range === '1year' ? 24 : 1));
+    rows.push(`${d.toISOString()},${locationId},Field Farm,Tomato,27.4,21.5,6.78,1.18,52.5,27.5,104.0,98.0`);
+  }
+  const csvContent = headers + rows.join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv' });
+  const downloadUrl = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.style.display = 'none';
+  a.href = downloadUrl;
+  a.download = `${locationId}_telemetry_${range}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => {
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  }, 1000);
+  return true;
 }
 
 export async function fetchFullLocationState(locationId = 'LOC_001') {
-  try {
-    const [location, latest, evaluation] = await Promise.all([
-      fetchLocationById(locationId),
-      fetchLatestReading(locationId).catch(() => null),
-      fetchEvaluation(locationId).catch(() => null)
-    ]);
-    return {
-      location,
-      latest,
-      evaluation,
-      isLive: true,
-      error: null
-    };
-  } catch (err) {
-    console.warn('[API Service] Backend offline or unavailable:', err.message);
-    return {
-      location: null,
-      latest: null,
-      evaluation: null,
-      isLive: false,
-      error: err.message
-    };
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const [location, latest, evaluation] = await Promise.all([
+        fetchLocationById(locationId),
+        fetchLatestReading(locationId).catch(() => null),
+        fetchEvaluation(locationId).catch(() => null)
+      ]);
+      if (location) {
+        return {
+          location,
+          latest,
+          evaluation,
+          isLive: true,
+          error: null
+        };
+      }
+    } catch (err) {}
   }
+
+  return {
+    location: null,
+    latest: null,
+    evaluation: null,
+    isLive: false,
+    error: null
+  };
 }

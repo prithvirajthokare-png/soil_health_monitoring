@@ -9,11 +9,14 @@ import openpyxl
 from backend.app.config import (
     CROP_LIBRARY_CSV, 
     CROP_STAGE_TARGETS_CSV, 
+    WORKING_DOCS_CROP_CSV,
     LOCATION_WORKBOOK_XLSX
 )
 from backend.app.models.location import Location
 from backend.app.models.crop import CropStageTarget
 from backend.app.models.reading import SensorReading
+from backend.app.models.user import User, UserFarmAssignment
+from backend.app.services.auth import hash_password
 
 def seed_crop_library(db: Session) -> int:
     """Ingests crop library CSV files into the SQLite database."""
@@ -25,6 +28,8 @@ def seed_crop_library(db: Session) -> int:
         csv_file = CROP_LIBRARY_CSV
     elif CROP_STAGE_TARGETS_CSV.exists():
         csv_file = CROP_STAGE_TARGETS_CSV
+    elif WORKING_DOCS_CROP_CSV.exists():
+        csv_file = WORKING_DOCS_CROP_CSV
     else:
         # Search sibling/parent dirs
         for p in [Path("c:/WO477/final_crop_library_v1.csv"), Path("c:/WO477/crop_stage_targets.csv")]:
@@ -203,7 +208,64 @@ def seed_locations_and_telemetry(db: Session):
         db.commit()
         print(f"[Seeder] Seeded 49 historical telemetry records for {loc_id}.")
 
+def seed_users(db: Session):
+    """Seeds initial administrator and regular user accounts if none exist."""
+    existing_count = db.query(User).count()
+    if existing_count > 0:
+        return
+
+    print("[Seeder] Seeding default administrator and regular users...")
+
+    # 1. Administrator
+    admin_pw, admin_salt = hash_password("admin123")
+    admin_user = User(
+        username="admin",
+        email="admin@terrapulse.ag",
+        hashed_password=admin_pw,
+        salt=admin_salt,
+        full_name="System Administrator",
+        role="admin",
+        is_active=True
+    )
+    db.add(admin_user)
+
+    # 2. Regular User 1 (Assigned to LOC_001 - Idea Factory Research Farm)
+    f1_pw, f1_salt = hash_password("farmer123")
+    farmer1 = User(
+        username="farmer_nitk",
+        email="farmer.nitk@terrapulse.ag",
+        hashed_password=f1_pw,
+        salt=f1_salt,
+        full_name="NITK Surathkal Research Farm",
+        role="user",
+        is_active=True
+    )
+    db.add(farmer1)
+
+    # 3. Regular User 2 (Assigned to LOC_002 - Maharashtra Test Field)
+    f2_pw, f2_salt = hash_password("farmer123")
+    farmer2 = User(
+        username="farmer_pune",
+        email="ramesh.patil@terrapulse.ag",
+        hashed_password=f2_pw,
+        salt=f2_salt,
+        full_name="Ramesh Patil",
+        role="user",
+        is_active=True
+    )
+    db.add(farmer2)
+    db.commit()
+
+    # Assign farms
+    assign1 = UserFarmAssignment(user_id=farmer1.id, location_id="LOC_001", role_on_farm="owner")
+    assign2 = UserFarmAssignment(user_id=farmer2.id, location_id="LOC_002", role_on_farm="owner")
+    db.add(assign1)
+    db.add(assign2)
+    db.commit()
+    print("[Seeder] Successfully seeded initial admin and regular user accounts.")
+
 def run_seed(db: Session):
     """Runs the complete auto-seeding pipeline."""
     seed_crop_library(db)
     seed_locations_and_telemetry(db)
+    seed_users(db)

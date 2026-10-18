@@ -3,6 +3,17 @@ from backend.app.schemas.crop import CropStageTargetBase, CropStageTargetRespons
 from backend.app.schemas.reading import SensorReadingCreate, SensorReadingResponse, SensorReadingBatchCreate
 from backend.app.schemas.evaluation import SoilHealthEvaluation, MetricEvaluation
 
+from backend.app.schemas.user import (
+    UserBase, 
+    UserCreate, 
+    UserUpdate, 
+    UserResponse, 
+    LoginRequest, 
+    TokenResponse, 
+    FarmAssignmentRequest, 
+    UserFarmAssignmentResponse
+)
+
 __all__ = [
     "LocationCreate",
     "LocationUpdate",
@@ -15,5 +26,13 @@ __all__ = [
     "SensorReadingResponse",
     "SensorReadingBatchCreate",
     "SoilHealthEvaluation",
-    "MetricEvaluation"
+    "MetricEvaluation",
+    "UserBase",
+    "UserCreate",
+    "UserUpdate",
+    "UserResponse",
+    "LoginRequest",
+    "TokenResponse",
+    "FarmAssignmentRequest",
+    "UserFarmAssignmentResponse"
 ]

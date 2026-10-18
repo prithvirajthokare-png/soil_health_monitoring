@@ -15,7 +15,13 @@ DATABASE_URL = f"sqlite:///{SQLITE_DB_PATH.as_posix()}"
 # External Seed Data Paths
 CROP_LIBRARY_CSV = PARENT_ROOT / "final_crop_library_v1.csv"
 CROP_STAGE_TARGETS_CSV = PARENT_ROOT / "crop_stage_targets.csv"
+WORKING_DOCS_CROP_CSV = PARENT_ROOT / "WorkingDocuments" / "Final_Crop_Library.csv"
 LOCATION_WORKBOOK_XLSX = PARENT_ROOT / "location_sensor_workbook_2.xlsx"
+
+# Authentication & Security
+AUTH_SECRET_KEY = os.getenv("AUTH_SECRET_KEY", "terrapulse-soil-health-secret-key-2026-precision-ag")
+AUTH_TOKEN_EXPIRE_HOURS = int(os.getenv("AUTH_TOKEN_EXPIRE_HOURS", "72"))
+AUTH_ALGORITHM = "HS256"
 
 # CORS configuration
 ALLOWED_ORIGINS = [

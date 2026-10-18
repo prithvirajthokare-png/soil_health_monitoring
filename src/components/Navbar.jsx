@@ -14,11 +14,18 @@ import {
   AlertCircle,
   LayoutDashboard,
   Map,
-  Bell
+  Bell,
+  ShieldCheck,
+  User,
+  LogOut,
+  Lock
 } from 'lucide-react';
 import { downloadHistoricalDataCsv } from '../services/api';
 
 export default function Navbar({ 
+  currentUser,
+  onLogout,
+  onShowLogin,
   locationData, 
   locationsList = [],
   selectedLocationId = 'LOC_001',
@@ -35,11 +42,17 @@ export default function Navbar({
 
   const [showDownloadMenu, setShowDownloadMenu] = useState(false);
   const [showLocationMenu, setShowLocationMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [downloadingRange, setDownloadingRange] = useState(null);
   const [downloadStatus, setDownloadStatus] = useState(null);
   
   const downloadRef = useRef(null);
   const locationRef = useRef(null);
+  const userRef = useRef(null);
+
+  const isAdmin = currentUser?.role === 'admin';
+  const isFarmer = currentUser?.role === 'user';
+  const isGuest = !currentUser;
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -49,6 +62,9 @@ export default function Navbar({
       }
       if (locationRef.current && !locationRef.current.contains(event.target)) {
         setShowLocationMenu(false);
+      }
+      if (userRef.current && !userRef.current.contains(event.target)) {
+        setShowUserMenu(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
@@ -85,9 +101,9 @@ export default function Navbar({
         
         {/* Brand & System Title */}
         <div 
-          onClick={() => setActiveTab('map')}
+          onClick={() => setActiveTab(isFarmer ? 'user-dashboard' : 'dashboard')}
           className="flex items-center gap-3 cursor-pointer group"
-          title="Go to Map Overview"
+          title="Go to Dashboard Overview"
         >
           <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 text-white shadow-lg shadow-emerald-900/40 ring-1 ring-emerald-400/30 group-hover:scale-105 transition-transform">
             <Sprout className="w-6 h-6 text-white" />
@@ -114,18 +130,32 @@ export default function Navbar({
         {/* Center Navigation Tabs & Active Location Selector */}
         <div className="flex items-center gap-2 bg-slate-950/80 p-1 rounded-xl border border-slate-800/80 shadow-inner">
           
-          {/* Navigation Item: Dashboard */}
-          <button 
-            onClick={() => setActiveTab('dashboard')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'dashboard'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Dashboard</span>
-          </button>
+          {/* Navigation Item: Farmer Dashboard vs Admin Dashboard */}
+          {isFarmer ? (
+            <button 
+              onClick={() => setActiveTab('user-dashboard')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'user-dashboard'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'user-dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <span>My Farm</span>
+            </button>
+          ) : (
+            <button 
+              onClick={() => setActiveTab('dashboard')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'dashboard'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <LayoutDashboard className={`w-3.5 h-3.5 ${activeTab === 'dashboard' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <span>Dashboard</span>
+            </button>
+          )}
 
           {/* Navigation Item: Live Map */}
           <button 
@@ -137,21 +167,23 @@ export default function Navbar({
             }`}
           >
             <Map className={`w-3.5 h-3.5 ${activeTab === 'map' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Live Map</span>
+            <span>{isFarmer ? 'Farm Map' : 'Live Map'}</span>
           </button>
           
-          {/* Navigation Item: Locations */}
-          <button 
-            onClick={() => setActiveTab('locations')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === 'locations'
-                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <MapPin className={`w-3.5 h-3.5 ${activeTab === 'locations' ? 'text-emerald-200' : 'text-slate-400'}`} />
-            <span>Locations</span>
-          </button>
+          {/* Navigation Item: Locations (Admin/Guest only) */}
+          {!isFarmer && (
+            <button 
+              onClick={() => setActiveTab('locations')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'locations'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+              }`}
+            >
+              <MapPin className={`w-3.5 h-3.5 ${activeTab === 'locations' ? 'text-emerald-200' : 'text-slate-400'}`} />
+              <span>Locations</span>
+            </button>
+          )}
           
           {/* Navigation Item: Alerts */}
           <button 
@@ -165,6 +197,21 @@ export default function Navbar({
             <Bell className={`w-3.5 h-3.5 ${activeTab === 'alerts' ? 'text-emerald-200' : 'text-slate-400'}`} />
             <span>Alerts</span>
           </button>
+
+          {/* Navigation Item: Admin Hub (Admin only) */}
+          {isAdmin && (
+            <button 
+              onClick={() => setActiveTab('admin-hub')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                activeTab === 'admin-hub'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-900/30'
+                  : 'text-purple-300 hover:text-purple-100 hover:bg-purple-950/40'
+              }`}
+            >
+              <ShieldCheck className={`w-3.5 h-3.5 ${activeTab === 'admin-hub' ? 'text-emerald-200' : 'text-purple-400'}`} />
+              <span>Admin Hub</span>
+            </button>
+          )}
 
           {/* Navigation Item: Our Team */}
           <button 
@@ -198,8 +245,9 @@ export default function Navbar({
             {/* Location Selector Dropdown */}
             {showLocationMenu && (
               <div className="absolute left-0 top-10 w-64 max-h-[70vh] overflow-y-auto bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-xl shadow-2xl p-1.5 z-50 text-xs space-y-1">
-                <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800">
-                  Select Field Location
+                <div className="px-2 py-1 text-[10px] uppercase tracking-wider text-slate-400 font-bold border-b border-slate-800 flex items-center justify-between">
+                  <span>{isFarmer ? 'Your Assigned Farm(s)' : 'Select Field Location'}</span>
+                  <span className="text-emerald-400 font-mono font-bold">{locationsList.length}</span>
                 </div>
                 {locationsList.map((l) => (
                   <button
@@ -215,9 +263,9 @@ export default function Navbar({
                     }`}
                   >
                     <div>
-                        <div className="font-bold truncate max-w-[180px]">{l.farmerName ? `${l.farmerName} Farm` : (l.name || 'Demo Location')}</div>
-                        <div className="text-[10px] text-slate-400 uppercase">{l.id === 'LOC_001' ? 'Real' : 'Simulated'} &bull; {l.village || l.id}</div>
-                      </div>
+                      <div className="font-bold truncate max-w-[180px]">{l.farmerName ? `${l.farmerName} Farm` : (l.name || 'Demo Location')}</div>
+                      <div className="text-[10px] text-slate-400 uppercase">{l.id === 'LOC_001' ? 'Real Node' : 'Simulated'} &bull; {l.village || l.id}</div>
+                    </div>
                     {l.id === locId && (
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     )}
@@ -228,7 +276,7 @@ export default function Navbar({
           </div>
         </div>
 
-        {/* Right Actions: Download Data, Sync, Reset View */}
+        {/* Right Actions: User Profile / Logout, Download Data, Sync */}
         <div className="flex items-center gap-2.5">
           
           {/* Download Data Dropdown Control */}
@@ -239,7 +287,7 @@ export default function Navbar({
               title="Download historical telemetry as CSV"
             >
               <Download className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Download Data</span>
+              <span className="hidden sm:inline">Export</span>
               <ChevronDown className="w-3 h-3 text-slate-400" />
             </button>
 
@@ -310,7 +358,7 @@ export default function Navbar({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-all"
             >
               <MapPin className="w-3.5 h-3.5" />
-              <span>Locate {locId}</span>
+              <span>Locate</span>
             </button>
           ) : (
             <button 
@@ -319,9 +367,86 @@ export default function Navbar({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 text-xs font-medium transition-all"
             >
               <Layers className="w-3.5 h-3.5" />
-              <span>View Map</span>
+              <span>Map</span>
             </button>
           )}
+
+          {/* User Profile / Authentication Menu */}
+          <div className="relative" ref={userRef}>
+            {currentUser ? (
+              <button
+                onClick={() => setShowUserMenu(!showUserMenu)}
+                className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl bg-slate-800/90 hover:bg-slate-800 border border-slate-700 text-xs transition-all shadow-sm"
+              >
+                <div className={`w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs ${
+                  isAdmin ? 'bg-purple-600 text-white' : 'bg-blue-600 text-white'
+                }`}>
+                  {currentUser.username[0]?.toUpperCase()}
+                </div>
+                <div className="text-left hidden md:block">
+                  <div className="font-bold text-slate-200 leading-tight truncate max-w-[100px]">
+                    {currentUser.full_name || currentUser.username}
+                  </div>
+                  <div className="text-[9px] font-mono uppercase tracking-wider text-emerald-400 font-bold">
+                    {isAdmin ? 'ADMIN' : 'FARMER'}
+                  </div>
+                </div>
+                <ChevronDown className="w-3 h-3 text-slate-400" />
+              </button>
+            ) : (
+              <button
+                onClick={onShowLogin}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Sign In</span>
+              </button>
+            )}
+
+            {/* User Dropdown */}
+            {showUserMenu && currentUser && (
+              <div className="absolute right-0 top-11 w-56 bg-slate-900/95 backdrop-blur-md border border-slate-700/80 rounded-2xl shadow-2xl p-2 z-50 text-xs space-y-2">
+                <div className="p-2 bg-slate-950/80 rounded-xl border border-slate-800/80">
+                  <div className="font-bold text-slate-100">{currentUser.full_name || currentUser.username}</div>
+                  <div className="text-[11px] text-slate-400 font-mono truncate">{currentUser.email}</div>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
+                      isAdmin ? 'bg-purple-500/20 text-purple-300' : 'bg-blue-500/20 text-blue-300'
+                    }`}>
+                      {isAdmin ? 'Administrator' : 'Farmer'}
+                    </span>
+                    <span className="text-[10px] text-slate-400">
+                      {isAdmin ? 'All Sites' : `${currentUser.assigned_farms?.length || 0} Farm(s)`}
+                    </span>
+                  </div>
+                </div>
+
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('admin-hub');
+                      setShowUserMenu(false);
+                    }}
+                    className="w-full text-left px-3 py-2 rounded-xl hover:bg-slate-800 text-slate-200 transition-colors flex items-center gap-2"
+                  >
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Admin Hub</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    onLogout();
+                  }}
+                  className="w-full text-left px-3 py-2 rounded-xl hover:bg-rose-950/60 text-rose-300 hover:text-rose-200 transition-colors flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4 text-rose-400" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
       </div>

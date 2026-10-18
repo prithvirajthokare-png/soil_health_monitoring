@@ -1,15 +1,23 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Navbar from './components/Navbar';
 import MapView from './components/MapView';
 import TeamProjectView from './components/TeamProjectView';
 import DashboardView from './components/DashboardView';
+import UserDashboardView from './components/UserDashboardView';
+import AdminHubView from './components/AdminHubView';
+import LandingPageView from './components/LandingPageView';
 import LocationsView from './components/LocationsView';
 import AlertsView from './components/AlertsView';
 import GlobalAlert from './components/GlobalAlert';
 import StatusBar from './components/StatusBar';
-import { fetchFullLocationState, fetchAllLocations } from './services/api';
+import { 
+  fetchFullLocationState, 
+  fetchAllLocations, 
+  getStoredUser, 
+  logoutUser, 
+  fetchCurrentUserProfile 
+} from './services/api';
 import { DEMO_LOC_001_READING, DEMO_LOC_001_EVALUATION } from './data/mockLocation';
-
 import { DEMO_LOCATIONS } from './data/demoLocations';
 
 // Stable deterministic list of the 50 supported locations (1 LIVE, 49 DEMO)
@@ -47,7 +55,6 @@ export const SUPPORTED_LOCATIONS = [
   ...DEMO_LOCATIONS
 ];
 
-
 const getInitialLocations = () => {
   let list = [...SUPPORTED_LOCATIONS];
   try {
@@ -60,16 +67,44 @@ const getInitialLocations = () => {
 };
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('dashboard'); // 'dashboard' | 'map' | 'locations' | 'alerts' | 'team'
+  // Authentication State
+  const [currentUser, setCurrentUser] = useState(() => getStoredUser());
+  const [isGuestMode, setIsGuestMode] = useState(false);
+
+  // Default active tab: Farmers get 'user-dashboard', Admins get 'dashboard'
+  const [activeTab, setActiveTab] = useState(() => {
+    const user = getStoredUser();
+    if (user?.role === 'user') return 'user-dashboard';
+    return 'dashboard';
+  });
+
   const [zoomLevel, setZoomLevel] = useState(15);
   const [cursorCoords, setCursorCoords] = useState(null);
   const [activeLayer, setActiveLayer] = useState('satellite');
   const [drawingMode, setDrawingMode] = useState(null);
   const [draftLocationData, setDraftLocationData] = useState(null);
 
-  // Multi-location State
-  const [selectedLocationId, setSelectedLocationId] = useState('LOC_001');
+  // Multi-location Master State
   const [locationsList, setLocationsList] = useState(getInitialLocations());
+
+  // Filtered Visible Locations based on User Role (Admin sees all, Farmer sees only assigned)
+  const visibleLocations = useMemo(() => {
+    if (!currentUser || currentUser.role === 'admin' || isGuestMode) {
+      return locationsList;
+    }
+    const assignedIds = currentUser.assigned_farms || ['LOC_001'];
+    const filtered = locationsList.filter(l => assignedIds.includes(l.id));
+    return filtered.length > 0 ? filtered : [locationsList[0]];
+  }, [currentUser, isGuestMode, locationsList]);
+
+  // Selected Location ID
+  const [selectedLocationId, setSelectedLocationId] = useState(() => {
+    const user = getStoredUser();
+    if (user?.role === 'user' && user.assigned_farms && user.assigned_farms.length > 0) {
+      return user.assigned_farms[0];
+    }
+    return 'LOC_001';
+  });
 
   // Backend Live State with deterministic LOC_001 demo baseline
   const [locationData, setLocationData] = useState(getInitialLocations()[0]);
@@ -83,6 +118,17 @@ export default function App() {
   // Ref to track latest request ID and prevent out-of-order race conditions
   const activeRequestIdRef = useRef(0);
   const lastCoordUpdateTimeRef = useRef(0);
+
+  // On mount: check auth profile from backend to sync fresh roles/farm assignments
+  useEffect(() => {
+    async function verifySession() {
+      const freshUser = await fetchCurrentUserProfile();
+      if (freshUser) {
+        setCurrentUser(freshUser);
+      }
+    }
+    verifySession();
+  }, []);
 
   // Fetch all available locations from backend
   const loadLocationsList = useCallback(async () => {
@@ -112,6 +158,13 @@ export default function App() {
       console.warn('[App] Backend not reachable, using baseline locations:', err.message);
     }
   }, []);
+
+  // Ensure selected location belongs to visible locations for current user
+  useEffect(() => {
+    if (visibleLocations.length > 0 && !visibleLocations.some(l => l.id === selectedLocationId)) {
+      setSelectedLocationId(visibleLocations[0].id);
+    }
+  }, [visibleLocations, selectedLocationId]);
 
   // Fetch telemetry and evaluation for selected location
   const loadData = useCallback(async (locationId = selectedLocationId, isManual = false) => {
@@ -258,12 +311,12 @@ export default function App() {
       }
     }
 
-    if (activeTab !== 'map') {
+    if (activeTab !== 'map' && activeTab !== 'user-dashboard') {
       setActiveTab('map');
     }
   }, [activeTab, locationsList]);
 
-  // Throttled cursor coordinates update to prevent 60fps full-app re-renders
+  // Throttled cursor coordinates update
   const handleCoordUpdate = useCallback((coords) => {
     const now = performance.now();
     if (now - lastCoordUpdateTimeRef.current > 120) {
@@ -284,6 +337,39 @@ export default function App() {
     }, 50);
   }, [activeTab]);
 
+  // Handle Authentication callbacks
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    setIsGuestMode(false);
+    if (user.role === 'user') {
+      setActiveTab('user-dashboard');
+      if (user.assigned_farms && user.assigned_farms.length > 0) {
+        setSelectedLocationId(user.assigned_farms[0]);
+      }
+    } else {
+      setActiveTab('dashboard');
+    }
+  };
+
+  const handleLogout = () => {
+    logoutUser();
+    setCurrentUser(null);
+    setIsGuestMode(false);
+  };
+
+  // If user is neither logged in nor in guest mode, show the landing page
+  if (!currentUser && !isGuestMode) {
+    return (
+      <LandingPageView 
+        onLoginSuccess={handleLoginSuccess}
+        onExploreGuest={() => {
+          setIsGuestMode(true);
+          setActiveTab('dashboard');
+        }}
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 text-slate-100 overflow-hidden select-none">
       <GlobalAlert 
@@ -292,10 +378,16 @@ export default function App() {
         latestReading={latestReading}
         onViewLocation={handleSelectLocation}
       />
+      
       {/* Top Navbar */}
       <Navbar 
+        currentUser={currentUser}
+        onLogout={handleLogout}
+        onShowLogin={() => {
+          setIsGuestMode(false);
+        }}
         locationData={locationData}
-        locationsList={locationsList}
+        locationsList={visibleLocations}
         selectedLocationId={selectedLocationId}
         onSelectLocation={handleSelectLocation}
         isLive={isLive}
@@ -313,23 +405,41 @@ export default function App() {
 
       {/* Main View Area */}
       <main className="relative flex-1 w-full h-full overflow-hidden flex">
+        
+        {/* Regular Farmer Dashboard */}
+        {activeTab === 'user-dashboard' && (
+          <div className="w-full h-full block">
+            <UserDashboardView 
+              currentUser={currentUser}
+              locationData={locationData}
+              latestReading={latestReading}
+              evaluationData={evaluationData}
+              assignedLocations={visibleLocations}
+              onSelectLocation={handleSelectLocation}
+              setActiveTab={setActiveTab}
+            />
+          </div>
+        )}
+
+        {/* Administrator / Global Dashboard */}
         {activeTab === 'dashboard' && (
           <div className="w-full h-full block">
             <DashboardView 
               locationData={locationData}
               latestReading={latestReading}
               evaluationData={evaluationData}
-              locationsList={locationsList}
+              locationsList={visibleLocations}
               setActiveTab={setActiveTab}
             />
           </div>
         )}
         
+        {/* Live Map View */}
         {activeTab === 'map' && (
           <div className="w-full h-full flex flex-col block">
             <MapView 
               locationData={locationData}
-              locationsList={locationsList}
+              locationsList={visibleLocations}
               selectedLocationId={selectedLocationId}
               onSelectLocation={handleSelectLocation}
               latestReading={latestReading}
@@ -352,9 +462,10 @@ export default function App() {
           </div>
         )}
 
+        {/* Locations List & Management View */}
         <div className={`w-full h-full flex flex-col ${activeTab === 'locations' ? 'block' : 'hidden'}`}>
           <LocationsView 
-            locationsList={locationsList} 
+            locationsList={visibleLocations} 
             setLocationsList={setLocationsList}
             setActiveTab={setActiveTab}
             onSelectLocation={handleSelectLocation}
@@ -367,15 +478,29 @@ export default function App() {
           />
         </div>
 
+        {/* Alerts View */}
         {activeTab === 'alerts' && (
           <div className="w-full h-full block">
             <AlertsView 
-              locationsList={locationsList}
+              locationsList={visibleLocations}
               onSelectLocation={handleSelectLocation}
             />
           </div>
         )}
 
+        {/* Admin Governance Hub */}
+        {activeTab === 'admin-hub' && (
+          <div className="w-full h-full block">
+            <AdminHubView 
+              currentUser={currentUser}
+              locationsList={locationsList}
+              onSelectLocation={handleSelectLocation}
+              setActiveTab={setActiveTab}
+            />
+          </div>
+        )}
+
+        {/* Our Team Project View */}
         {activeTab === 'team' && (
           <div className="w-full h-full overflow-y-auto block">
             <TeamProjectView 

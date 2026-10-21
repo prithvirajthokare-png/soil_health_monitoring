@@ -18,7 +18,8 @@ import {
   Gauge,
   Thermometer,
   Zap,
-  Info
+  Info,
+  Play
 } from 'lucide-react';
 
 /**
@@ -26,7 +27,7 @@ import {
  * Allows the farmer to switch crops, inspect neural feature contributions,
  * review moisture decay curves, and execute precise nutrient prescriptions.
  */
-export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, latestReading, onBack }) {
+export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, latestReading, onBack, onStartTour }) {
   const [selectedCropId, setSelectedCropId] = useState('tomato');
   const [selectedStage, setSelectedStage] = useState(null);
   const [copied, setCopied] = useState(false);
@@ -112,6 +113,16 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
           </div>
 
           <div className="flex items-center gap-2.5">
+            {onStartTour && (
+              <button
+                onClick={onStartTour}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-400 hover:to-emerald-500 text-white text-xs font-bold transition-all shadow-md shadow-emerald-950"
+                title="Start automated feature tour across all views"
+              >
+                <Play className="w-3.5 h-3.5 fill-current" />
+                <span>Start Video Tour</span>
+              </button>
+            )}
             <button
               onClick={handleCopyPrescription}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold transition-all shadow-sm"

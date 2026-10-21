@@ -82,13 +82,7 @@ export default function App() {
 
   const [isTourActive, setIsTourActive] = useState(false);
 
-  // Trigger tour if demo is requested
-  useEffect(() => {
-    if (activeTab === 'demo') {
-      setIsTourActive(true);
-      setActiveTab('dashboard');
-    }
-  }, [activeTab]);
+
 
   const [zoomLevel, setZoomLevel] = useState(15);
   const [cursorCoords, setCursorCoords] = useState(null);
@@ -514,13 +508,14 @@ export default function App() {
         )}
 
         {/* Explainable AI Agronomic Intelligence Deep Dive */}
-        {activeTab === 'ai-insights' && (
+        {(activeTab === 'demo' || activeTab === 'ai-insights') && (
           <div className="w-full h-full overflow-y-auto p-4 md:p-6 lg:p-8 block">
             <AiInsightsPanel 
               locationId={locationData?.id || selectedLocationId}
               locationData={locationData}
               latestReading={latestReading}
               onBack={() => setActiveTab(currentUser?.role === 'user' ? 'user-dashboard' : 'dashboard')}
+              onStartTour={() => setIsTourActive(true)}
             />
           </div>
         )}

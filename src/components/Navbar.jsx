@@ -223,7 +223,7 @@ export default function Navbar({
           <button 
             onClick={() => setActiveTab('demo')}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
+              (activeTab === 'demo' || activeTab === 'ai-insights')
                 ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/40'
                 : 'text-emerald-400 hover:text-emerald-200 hover:bg-slate-900'
             }`}

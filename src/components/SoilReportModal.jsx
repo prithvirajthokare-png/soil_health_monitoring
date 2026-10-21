@@ -197,29 +197,15 @@ export default function SoilReportModal({ locationId, locationName, onClose }) {
 
   return (
     <>
-      {/* Print-only header injected via CSS print rules */}
-      <style>{`
-        @media print {
-          body > *:not(#soil-report-print-root) { display: none !important; }
-          #soil-report-print-root {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            overflow: auto; background: white; z-index: 9999;
-            padding: 24px; color: #0f172a;
-          }
-          .print\\:hidden { display: none !important; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
-
       {/* Backdrop */}
       <div
-        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto print:bg-transparent print:p-0"
+        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto print:bg-transparent print:p-0 print:static print:overflow-visible"
         onClick={(e) => e.target === e.currentTarget && onClose()}
       >
         <div
           id="soil-report-print-root"
           ref={printRef}
-          className="w-full max-w-3xl my-8 bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden print:max-w-full print:my-0 print:rounded-none print:border-0 print:bg-white print:shadow-none"
+          className="printable-report w-full max-w-3xl my-8 bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden print:max-w-full print:my-0 print:rounded-none print:border-0 print:bg-white print:shadow-none print:overflow-visible"
         >
           {/* Modal Header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-slate-900/80 print:bg-white print:border-slate-300">

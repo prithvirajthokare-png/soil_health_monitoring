@@ -1,8 +1,104 @@
-/* Print styles for Soil Health Report */
+/* Print styles for TerraPulse Soil Health Report */
 @media print {
-  body * { visibility: hidden; }
-  .printable-report, .printable-report * { visibility: visible; }
-  .printable-report { position: absolute; left: 0; top: 0; width: 100%; }
-  .no-print { display: none !important; }
-  .page-break { page-break-before: always; }
+  @page {
+    margin: 12mm 15mm;
+    size: A4 portrait;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    visibility: hidden !important;
+  }
+
+  /* Make report container and all its contents visible */
+  #soil-report-print-root,
+  #soil-report-print-root *,
+  .printable-report,
+  .printable-report * {
+    visibility: visible !important;
+  }
+
+  #soil-report-print-root,
+  .printable-report {
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 16px !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: none !important;
+    border: none !important;
+    overflow: visible !important;
+  }
+
+  /* Ensure text colors are high-contrast dark for printing */
+  #soil-report-print-root h1,
+  #soil-report-print-root h2,
+  #soil-report-print-root h3,
+  #soil-report-print-root h4,
+  #soil-report-print-root p,
+  #soil-report-print-root span,
+  #soil-report-print-root div,
+  #soil-report-print-root td,
+  #soil-report-print-root th {
+    color: #0f172a !important;
+    text-shadow: none !important;
+  }
+
+  #soil-report-print-root .text-slate-400,
+  #soil-report-print-root .text-slate-500,
+  #soil-report-print-root .text-slate-600 {
+    color: #334155 !important;
+  }
+
+  #soil-report-print-root .text-emerald-400,
+  #soil-report-print-root .text-emerald-300 {
+    color: #047857 !important;
+  }
+
+  /* Card and section background overrides for paper */
+  #soil-report-print-root .bg-slate-950,
+  #soil-report-print-root .bg-slate-900,
+  #soil-report-print-root .bg-slate-900\/80,
+  #soil-report-print-root .bg-slate-950\/60,
+  #soil-report-print-root .bg-slate-800 {
+    background-color: #f8fafc !important;
+    border-color: #cbd5e1 !important;
+  }
+
+  #soil-report-print-root table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  #soil-report-print-root table th,
+  #soil-report-print-root table td {
+    border-bottom: 1px solid #e2e8f0 !important;
+    color: #0f172a !important;
+  }
+
+  /* Hide interactive non-print elements */
+  .print\:hidden,
+  .no-print,
+  button,
+  .backdrop-blur-sm,
+  .fixed.inset-0 {
+    background: transparent !important;
+  }
+
+  .print\:hidden,
+  .no-print {
+    display: none !important;
+    visibility: hidden !important;
+  }
+
+  .page-break {
+    page-break-before: always;
+  }
 }

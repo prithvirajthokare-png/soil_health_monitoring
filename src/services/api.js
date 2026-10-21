@@ -451,6 +451,109 @@ export async function fetchFarmComparison(locationIds = null) {
   return null;
 }
 
+// ---------------- AI ANALYTICS APIS ----------------
+
+export async function fetchIrrigationPrediction(locationId = 'LOC_001') {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/locations/${locationId}/ai/prediction`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
+  // Offline fallback: simulate a rule-based prediction from demo baseline
+  return _fallbackPrediction();
+}
+
+export async function fetchSoilHealthReport(locationId = 'LOC_001') {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/locations/${locationId}/ai/report`, {
+        headers: getAuthHeaders()
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+    } catch (err) {}
+  }
+  // Offline fallback: generate a minimal demo report
+  return _fallbackReport(locationId);
+}
+
+function _fallbackPrediction() {
+  return {
+    has_trend: true,
+    slope_pct_per_hour: -0.012,
+    current_moisture_pct: 27.4,
+    predicted_hours_to_trigger: 61.7,
+    urgency: 'normal',
+    confidence: 'medium',
+    message: 'Irrigation not required for ~62 hours. Moisture (27.4%) declining gradually at 0.012%/hr. (Demo baseline)'
+  };
+}
+
+function _fallbackReport(locationId) {
+  return {
+    meta: {
+      location_id: locationId,
+      location_name: 'Idea Factory Research Farm',
+      current_crop: 'tomato',
+      health_score: 85,
+      health_status: 'Optimal',
+      report_engine: 'offline-demo',
+      report_version: '2.0'
+    },
+    executive_summary: {
+      headline: `Soil Health Report: ${locationId}`,
+      status_badge: 'Optimal',
+      score: 85,
+      health_narrative: 'This farm is in excellent agronomic condition. All major soil parameters are within optimal ranges. (Demo mode — connect backend for live data.)',
+      irrigation_note: 'Irrigation not required for approximately 62 hours.',
+      critical_issues: [],
+      positive_findings: [
+        'Soil moisture (27.4%) is optimal.',
+        'pH (6.78) is in the ideal range.',
+        'NPK levels are well balanced.'
+      ]
+    },
+    metrics: [
+      { metric: 'Moisture (VWC)', value: 27.4, unit: '%', status: 'optimal', status_label: '✅ Optimal', target: 28.0, reading_message: 'Soil moisture (27.4%) is optimal.', interpretation: 'Volumetric water content is ideal for root uptake and gas exchange.' },
+      { metric: 'Soil pH', value: 6.78, unit: 'pH', status: 'optimal', status_label: '✅ Optimal', target: 6.75, reading_message: 'Soil pH (6.78) is in nominal range.', interpretation: 'pH is optimal for nutrient availability and microbial activity.' },
+      { metric: 'Salinity (EC)', value: 1.18, unit: 'dS/m', status: 'optimal', status_label: '✅ Optimal', target: 1.2, reading_message: 'Salinity (1.18 dS/m) is safe.', interpretation: 'EC is within safe limits, minimizing osmotic stress.' }
+    ],
+    irrigation_forecast: {
+      current_moisture: 27.4,
+      trigger_threshold: 20.0,
+      slope_pct_per_hour: -0.012,
+      predicted_hours_to_trigger: 61.7,
+      urgency: 'normal',
+      confidence: 'medium',
+      has_trend: true,
+      forecast_message: 'Irrigation not required for ~62 hours.',
+      methodology: 'Linear regression on recent moisture readings to compute drying rate.'
+    },
+    nutrient_analysis: {
+      available: true,
+      nitrogen: { value: 52.5, target: 40, status: 'optimal', note: 'Nitrogen (N): 52.5 mg/kg (31% above target of 40 mg/kg) — optimal' },
+      phosphorus: { value: 27.5, target: 20, status: 'optimal', note: 'Phosphorus (P): 27.5 mg/kg (38% above target of 20 mg/kg) — optimal' },
+      potassium: { value: 104.0, target: 100, status: 'optimal', note: 'Potassium (K): 104.0 mg/kg (4% above target of 100 mg/kg) — optimal' },
+      npk_ratio: '52:27:104',
+      balance_summary: 'All three macronutrients (N, P, K) are well balanced within target ranges.'
+    },
+    recommendations: [
+      { priority: 1, category: 'Maintenance', action: 'All parameters are within optimal ranges. Continue current agronomic practices and maintain monitoring schedule.', urgency: 'routine' }
+    ],
+    action_plan: [
+      { timeframe: 'Ongoing (Weekly)', actions: ['Review soil health evaluation daily via TerraPulse dashboard.', 'Monitor irrigation prediction trends and adjust scheduling accordingly.', 'Calibrate sensor nodes if battery drops below 20%.'] }
+    ],
+    engine: 'offline-demo',
+    generated_at: new Date().toISOString()
+  };
+}
+
 // ---------------- EXISTING TELEMETRY & LOCATIONS APIS (PRESERVED) ----------------
 
 export async function fetchLocationById(locationId = 'LOC_001') {

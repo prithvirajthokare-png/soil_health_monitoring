@@ -22,7 +22,9 @@ import {
   Activity,
   Droplets,
   TestTube,
-  Gauge
+  Gauge,
+  FileText,
+  BrainCircuit
 } from 'lucide-react';
 import { 
   fetchAllUsers, 
@@ -33,6 +35,7 @@ import {
   unassignFarmFromUser,
   fetchFarmComparison
 } from '../services/api';
+import SoilReportModal from './SoilReportModal';
 
 export default function AdminHubView({ 
   currentUser, 
@@ -50,6 +53,8 @@ export default function AdminHubView({
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   const [assigningFarmsUser, setAssigningFarmsUser] = useState(null);
+  const [reportModalLocationId, setReportModalLocationId] = useState(null);
+  const [reportModalLocationName, setReportModalLocationName] = useState(null);
 
   // Add User Form State
   const [newUserForm, setNewUserForm] = useState({
@@ -531,15 +536,28 @@ export default function AdminHubView({
                             </span>
                           </td>
                           <td className="px-5 py-3.5 text-right">
-                            <button
-                              onClick={() => {
-                                onSelectLocation(farm.location_id);
-                                setActiveTab('map');
-                              }}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold border border-emerald-500/30"
-                            >
-                              Inspect
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => {
+                                  setReportModalLocationId(farm.location_id);
+                                  setReportModalLocationName(farm.name);
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs font-semibold border border-blue-500/30 flex items-center gap-1"
+                                title="Generate AI Soil Report"
+                              >
+                                <FileText className="w-3 h-3" />
+                                Report
+                              </button>
+                              <button
+                                onClick={() => {
+                                  onSelectLocation(farm.location_id);
+                                  setActiveTab('map');
+                                }}
+                                className="px-2.5 py-1 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 text-xs font-semibold border border-emerald-500/30"
+                              >
+                                Inspect
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -809,6 +827,15 @@ export default function AdminHubView({
             </form>
           </div>
         </div>
+      )}
+
+      {/* SOIL HEALTH REPORT MODAL (Admin) */}
+      {reportModalLocationId && (
+        <SoilReportModal
+          locationId={reportModalLocationId}
+          locationName={reportModalLocationName}
+          onClose={() => { setReportModalLocationId(null); setReportModalLocationName(null); }}
+        />
       )}
 
     </div>

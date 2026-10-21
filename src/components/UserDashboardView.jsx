@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Sprout, 
   MapPin, 
@@ -19,9 +19,14 @@ import {
   RefreshCw,
   Clock,
   Sparkles,
-  Info
+  Info,
+  BrainCircuit,
+  FileText,
+  TrendingDown,
+  TrendingUp
 } from 'lucide-react';
-import { downloadHistoricalDataCsv } from '../services/api';
+import { downloadHistoricalDataCsv, fetchIrrigationPrediction } from '../services/api';
+import SoilReportModal from './SoilReportModal';
 
 export default function UserDashboardView({
   currentUser,
@@ -34,6 +39,9 @@ export default function UserDashboardView({
 }) {
   const [downloadingRange, setDownloadingRange] = useState(null);
   const [downloadStatus, setDownloadStatus] = useState(null);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [prediction, setPrediction] = useState(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
 
   const loc = locationData || assignedLocations[0] || {};
   const locId = loc.id || 'LOC_001';
@@ -64,6 +72,23 @@ export default function UserDashboardView({
     `All soil health metrics for ${farmName} are currently within target thresholds for active crop stage.`,
     `Maintain scheduled irrigation schedule; soil moisture is currently optimal.`
   ];
+
+  // Load irrigation prediction whenever location changes
+  const loadPrediction = useCallback(async () => {
+    setPredictionLoading(true);
+    try {
+      const result = await fetchIrrigationPrediction(locId);
+      setPrediction(result);
+    } catch (e) {
+      setPrediction(null);
+    } finally {
+      setPredictionLoading(false);
+    }
+  }, [locId]);
+
+  useEffect(() => {
+    loadPrediction();
+  }, [loadPrediction]);
 
   const handleDownload = async (rangeKey, rangeLabel) => {
     try {
@@ -392,7 +417,150 @@ export default function UserDashboardView({
           </div>
         </div>
 
+        {/* ──── AI FEATURES SECTION ──── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+          {/* Predictive Irrigation Card */}
+          <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30">
+                  <BrainCircuit className="w-4 h-4 text-blue-400" />
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">AI Forecast</span>
+                  <h3 className="text-sm font-bold text-slate-100 -mt-0.5">Irrigation Prediction</h3>
+                </div>
+              </div>
+              <button
+                onClick={loadPrediction}
+                disabled={predictionLoading}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 text-xs transition-colors"
+                title="Refresh prediction"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${predictionLoading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            {predictionLoading ? (
+              <div className="flex items-center gap-3 py-4">
+                <div className="w-5 h-5 rounded-full border-2 border-blue-400 border-t-transparent animate-spin" />
+                <span className="text-xs text-slate-400 animate-pulse">Analyzing moisture trend…</span>
+              </div>
+            ) : prediction ? (
+              <div className="space-y-3">
+                {/* Urgency Banner */}
+                <div className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border ${
+                  prediction.urgency === 'critical' ? 'bg-red-950/40 border-red-800/50 text-red-300' :
+                  prediction.urgency === 'warning' ? 'bg-yellow-950/40 border-yellow-800/50 text-yellow-300' :
+                  'bg-emerald-950/40 border-emerald-800/50 text-emerald-300'
+                }`}>
+                  {prediction.urgency === 'critical' ? <AlertTriangle className="w-4 h-4 shrink-0" /> :
+                   prediction.urgency === 'warning' ? <Clock className="w-4 h-4 shrink-0" /> :
+                   <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <p className="text-xs leading-snug">{prediction.message}</p>
+                </div>
+
+                {/* Prediction Metrics */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-slate-950/60 rounded-xl p-3 text-center border border-slate-800">
+                    <p className="text-[9px] uppercase text-slate-500 font-semibold">Current VWC</p>
+                    <p className="text-lg font-mono font-bold text-slate-100">
+                      {prediction.current_moisture_pct?.toFixed(1) ?? '—'}
+                      <span className="text-[10px] text-slate-400">%</span>
+                    </p>
+                  </div>
+                  <div className="bg-slate-950/60 rounded-xl p-3 text-center border border-slate-800">
+                    <p className="text-[9px] uppercase text-slate-500 font-semibold">Drying Rate</p>
+                    <p className={`text-lg font-mono font-bold flex items-center justify-center gap-0.5 ${
+                      (prediction.slope_pct_per_hour ?? 0) < 0 ? 'text-orange-400' : 'text-emerald-400'
+                    }`}>
+                      {(prediction.slope_pct_per_hour ?? 0) < 0
+                        ? <TrendingDown className="w-3.5 h-3.5" />
+                        : <TrendingUp className="w-3.5 h-3.5" />}
+                      {prediction.slope_pct_per_hour != null
+                        ? `${Math.abs(prediction.slope_pct_per_hour).toFixed(3)}`
+                        : '—'}
+                    </p>
+                    <p className="text-[9px] text-slate-500">%/hr</p>
+                  </div>
+                  <div className="bg-slate-950/60 rounded-xl p-3 text-center border border-slate-800">
+                    <p className="text-[9px] uppercase text-slate-500 font-semibold">Until Trigger</p>
+                    <p className={`text-lg font-mono font-bold ${
+                      prediction.urgency === 'critical' ? 'text-red-400' :
+                      prediction.urgency === 'warning' ? 'text-yellow-400' : 'text-emerald-400'
+                    }`}>
+                      {prediction.predicted_hours_to_trigger != null
+                        ? `${prediction.predicted_hours_to_trigger}h`
+                        : '—'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between text-[10px] text-slate-500">
+                  <span>Confidence: <strong className="text-slate-400">{prediction.confidence || '—'}</strong></span>
+                  {prediction.has_trend === false && (
+                    <span className="text-orange-400 flex items-center gap-1">
+                      <Info className="w-3 h-3" /> Low data
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500 py-3">Unable to load irrigation prediction.</p>
+            )}
+          </div>
+
+          {/* AI Soil Health Report Card */}
+          <div className="bg-gradient-to-br from-slate-900 to-emerald-950/20 border border-emerald-900/40 rounded-3xl p-6 shadow-xl space-y-4">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/30">
+                <FileText className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-500/80">AI Feature</span>
+                <h3 className="text-sm font-bold text-slate-100 -mt-0.5">Soil Health Report</h3>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Generate a comprehensive AI-narrated agronomic report for{' '}
+              <strong className="text-slate-300">{farmName}</strong> — including metric breakdown,
+              irrigation forecast, NPK analysis, and a 7-day action plan.
+              Printable and exportable as PDF.
+            </p>
+
+            <div className="flex flex-wrap gap-2 text-[10px]">
+              {['Executive Summary', 'Metric Breakdown', 'NPK Analysis', 'Irrigation Forecast', '7-Day Plan', 'PDF Export'].map(f => (
+                <span key={f} className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                  <Sparkles className="w-2.5 h-2.5" />{f}
+                </span>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowReportModal(true)}
+              className="w-full flex items-center justify-center gap-2.5 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-3 rounded-2xl shadow-lg shadow-emerald-950/50 text-sm font-bold transition-all"
+            >
+              <BrainCircuit className="w-4 h-4" />
+              Generate AI Report
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+
+        </div>
+        {/* ──── END AI FEATURES ──── */}
+
       </div>
+
+      {/* Soil Report Modal */}
+      {showReportModal && (
+        <SoilReportModal
+          locationId={locId}
+          locationName={farmName}
+          onClose={() => setShowReportModal(false)}
+        />
+      )}
     </div>
   );
 }

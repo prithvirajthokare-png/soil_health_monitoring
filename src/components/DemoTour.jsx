@@ -63,7 +63,7 @@ export default function DemoTour({ activeTab, setActiveTab, onClose }) {
   const currentStep = TOUR_STEPS[stepIdx];
 
   return (
-    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xl animate-bounce-subtle">
+    <div className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-xl transition-all">
       <div className="bg-slate-900/95 backdrop-blur-xl border border-emerald-500/50 rounded-2xl p-4 shadow-2xl ring-1 ring-emerald-400/30 text-white flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white shadow-md shadow-emerald-950 shrink-0">

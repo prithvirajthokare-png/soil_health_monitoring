@@ -139,17 +139,24 @@ export const SUPPORTED_CROPS = [
  * computing neural suitability scores, feature attribution, and prescriptions.
  */
 export function runAiCropDiagnostic(cropId, telemetry = {}, growthStage = null) {
-  const crop = SUPPORTED_CROPS.find(c => c.id === cropId) || SUPPORTED_CROPS[0];
-  const stage = growthStage || crop.defaultStage;
+  const tSafe = (telemetry && typeof telemetry === 'object') ? telemetry : {};
+  const crop = SUPPORTED_CROPS.find(c => c && c.id === cropId) || SUPPORTED_CROPS[0];
+  const stage = growthStage || (crop && crop.defaultStage) || 'Fruiting';
 
-  // Telemetry defaults with fallback to standard sensor values
-  const moisture = Number(telemetry.soil_moisture ?? telemetry.moisture ?? 27.4);
-  const temp = Number(telemetry.soil_temperature ?? telemetry.temperature ?? 24.8);
-  const ph = Number(telemetry.ph ?? 6.5);
-  const ec = Number(telemetry.electrical_conductivity ?? telemetry.ec ?? 1.8);
-  const n = Number(telemetry.nitrogen ?? 145);
-  const p = Number(telemetry.phosphorus ?? 52);
-  const k = Number(telemetry.potassium ?? 210);
+  const safeNum = (val, fallback) => {
+    if (val === null || val === undefined || val === '') return fallback;
+    const num = Number(val);
+    return isNaN(num) ? fallback : num;
+  };
+
+  // Telemetry defaults with resilient multi-key fallback
+  const moisture = safeNum(tSafe.soil_moisture ?? tSafe.moisture_pct ?? tSafe.moisture, 27.4);
+  const temp = safeNum(tSafe.soil_temperature ?? tSafe.temperature_c ?? tSafe.temperature, 24.8);
+  const ph = safeNum(tSafe.ph, 6.78);
+  const ec = safeNum(tSafe.electrical_conductivity ?? tSafe.ec_ds_m ?? tSafe.ec, 1.18);
+  const n = safeNum(tSafe.nitrogen ?? tSafe.nitrogen_mg_kg, 145);
+  const p = safeNum(tSafe.phosphorus ?? tSafe.phosphorus_mg_kg, 52);
+  const k = safeNum(tSafe.potassium ?? tSafe.potassium_mg_kg, 210);
 
   const t = crop.targets;
 

@@ -188,7 +188,86 @@ export default function SoilReportModal({ locationId, locationName, onClose }) {
   }, [onClose]);
 
   const handlePrint = () => {
-    window.print();
+    if (!printRef.current) {
+      window.print();
+      return;
+    }
+
+    try {
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      const content = printRef.current.cloneNode(true);
+
+      // Remove non-printable action buttons
+      const nonPrintElements = content.querySelectorAll('button, .print\\:hidden, .no-print');
+      nonPrintElements.forEach(el => el.remove());
+
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Soil Health Report - ${locationName || locationId}</title>
+            <style>
+              @page { margin: 12mm; size: A4 portrait; }
+              * { box-sizing: border-box; }
+              body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+                color: #0f172a;
+                background: #ffffff;
+                margin: 0;
+                padding: 16px;
+                font-size: 13px;
+                line-height: 1.5;
+              }
+              h1, h2, h3, h4 { color: #0f172a; margin-top: 0; }
+              .p-5, .p-4 { padding: 16px; margin-bottom: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; }
+              .text-slate-100, .text-slate-200, .text-slate-300, .text-white { color: #0f172a !important; }
+              .text-slate-400, .text-slate-500 { color: #475569 !important; }
+              .text-emerald-400, .text-emerald-500, .text-emerald-600 { color: #047857 !important; }
+              .text-cyan-400, .text-cyan-300 { color: #0e7490 !important; }
+              .text-amber-400, .text-amber-500 { color: #b45309 !important; }
+              .text-rose-400, .text-rose-500 { color: #be123c !important; }
+              .bg-slate-900, .bg-slate-950, .bg-slate-900\\/80, .bg-slate-950\\/60, .bg-slate-800 {
+                background: #f8fafc !important;
+                border: 1px solid #e2e8f0 !important;
+              }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+              th { text-align: left; padding: 8px 10px; border-bottom: 2px solid #cbd5e1; font-size: 11px; text-transform: uppercase; color: #475569; }
+              td { padding: 8px 10px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #0f172a; }
+              .rounded-full { border-radius: 9999px; }
+              .rounded-xl, .rounded-2xl { border-radius: 10px; }
+              button, .print\\:hidden, .no-print { display: none !important; }
+            </style>
+          </head>
+          <body>
+            ${content.innerHTML}
+          </body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1500);
+      }, 300);
+    } catch (err) {
+      console.error('Iframe print error, falling back to window.print():', err);
+      window.print();
+    }
   };
 
   const summary = report?.executive_summary;

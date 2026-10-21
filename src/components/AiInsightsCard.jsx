@@ -19,8 +19,9 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
 
   // Automatically adapt to the location's current crop if specified
   useEffect(() => {
-    if (locationData?.current_crop || locationData?.crop) {
-      const match = (locationData.current_crop || locationData.crop).toLowerCase();
+    const cropRaw = locationData?.current_crop || locationData?.crop;
+    if (cropRaw && typeof cropRaw === 'string') {
+      const match = cropRaw.toLowerCase();
       const found = SUPPORTED_CROPS.find(c => match.includes(c.id) || c.name.toLowerCase().includes(match));
       if (found) setSelectedCropId(found.id);
     }

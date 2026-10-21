@@ -18,7 +18,8 @@ import {
   ShieldCheck,
   User,
   LogOut,
-  Lock
+  Lock,
+  Brain
 } from 'lucide-react';
 import { downloadHistoricalDataCsv } from '../services/api';
 

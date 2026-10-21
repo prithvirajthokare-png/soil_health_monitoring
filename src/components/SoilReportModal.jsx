@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import '../../styles/report-print.css';
+import '../styles/report-print.css';
 import {
   X,
   Printer,

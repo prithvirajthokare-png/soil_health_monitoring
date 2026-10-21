@@ -137,19 +137,6 @@ export default function Navbar({
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>My Farm</span>
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
           ) : (
             <button 
               onClick={() => setActiveTab('dashboard')}
@@ -162,19 +149,6 @@ export default function Navbar({
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Dashboard</span>
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
           )}
 
           {/* Navigation Item: Map */}
@@ -190,19 +164,6 @@ export default function Navbar({
             <span>Map</span>
           </button>
           
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
-          
           {/* Navigation Item: Locations (Admin/Guest only) */}
           {!isFarmer && (
             <button 
@@ -216,19 +177,6 @@ export default function Navbar({
               <MapPin className="w-3.5 h-3.5" />
               <span>Locations</span>
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
           )}
           
           {/* Navigation Item: Alerts */}
@@ -242,19 +190,6 @@ export default function Navbar({
           >
             <Bell className="w-3.5 h-3.5" />
             <span>Alerts</span>
-          </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
           </button>
 
           {/* Navigation Item: Admin Hub (Admin only) */}
@@ -270,19 +205,6 @@ export default function Navbar({
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>Admin Hub</span>
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
           )}
 
           {/* Navigation Item: Our Team */}
@@ -297,18 +219,18 @@ export default function Navbar({
             <Users className="w-3.5 h-3.5" />
             <span>Team</span>
           </button>
-          
-          {/* Navigation Item: Demo Mode */}
+          {/* Navigation Item: AI Demo Tour */}
           <button 
             onClick={() => setActiveTab('demo')}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
               activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+                ? 'bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/40'
+                : 'text-emerald-400 hover:text-emerald-200 hover:bg-slate-900'
             }`}
+            title="Start automated AI feature tour"
           >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
+            <Brain className="w-3.5 h-3.5 text-emerald-400" />
+            <span>AI Demo</span>
           </button>
         </nav>
 
@@ -329,19 +251,6 @@ export default function Navbar({
               </span>
               <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
 
             {/* Location Selector Dropdown */}
             {showLocationMenu && (
@@ -371,19 +280,6 @@ export default function Navbar({
                       <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                     )}
                   </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
                 ))}
               </div>
             )}
@@ -400,19 +296,6 @@ export default function Navbar({
               <span className="hidden lg:inline">Export</span>
               <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
 
             {/* Dropdown Menu */}
             {showDownloadMenu && (
@@ -443,19 +326,6 @@ export default function Navbar({
                       <FileSpreadsheet className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-300" />
                     )}
                   </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
                 ))}
 
                 {downloadStatus && (
@@ -485,19 +355,6 @@ export default function Navbar({
             <RefreshCw className={`w-3.5 h-3.5 text-slate-400 ${isRefreshing ? 'animate-spin text-emerald-400' : ''}`} />
             <span className="hidden lg:inline">Sync</span>
           </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
 
           {/* Reset / Focus Button (on map view) */}
           {activeTab === 'map' && (
@@ -509,19 +366,6 @@ export default function Navbar({
               <MapPin className="w-3.5 h-3.5" />
               <span className="hidden md:inline">Locate</span>
             </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
           )}
 
           {/* User Profile / Authentication Menu */}
@@ -545,19 +389,6 @@ export default function Navbar({
                 </span>
                 <ChevronDown className="w-3 h-3 text-slate-400 shrink-0" />
               </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
             ) : (
               <button
                 onClick={onShowLogin}
@@ -566,19 +397,6 @@ export default function Navbar({
                 <Lock className="w-3.5 h-3.5" />
                 <span>Sign In</span>
               </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
             )}
 
             {/* User Dropdown */}
@@ -610,19 +428,6 @@ export default function Navbar({
                     <ShieldCheck className="w-4 h-4 text-emerald-400" />
                     <span>Admin Hub</span>
                   </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
                 )}
 
                 <button
@@ -635,19 +440,6 @@ export default function Navbar({
                   <LogOut className="w-4 h-4 text-rose-400" />
                   <span>Sign Out</span>
                 </button>
-          
-          {/* Navigation Item: Demo Mode */}
-          <button 
-            onClick={() => setActiveTab('demo')}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-              activeTab === 'demo'
-                ? 'bg-emerald-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
-            }`}
-          >
-            <Brain className="w-3.5 h-3.5" />
-            <span>Demo</span>
-          </button>
               </div>
             )}
           </div>

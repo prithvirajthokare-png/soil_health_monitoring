@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import DemoTour from './components/DemoTour';
 import Navbar from './components/Navbar';
 import MapView from './components/MapView';
 import TeamProjectView from './components/TeamProjectView';
@@ -8,6 +9,7 @@ import AdminHubView from './components/AdminHubView';
 import LandingPageView from './components/LandingPageView';
 import LocationsView from './components/LocationsView';
 import AlertsView from './components/AlertsView';
+import AiInsightsPanel from './components/AiInsightsPanel';
 import GlobalAlert from './components/GlobalAlert';
 import StatusBar from './components/StatusBar';
 import { 
@@ -77,6 +79,16 @@ export default function App() {
     if (user?.role === 'user') return 'user-dashboard';
     return 'dashboard';
   });
+
+  const [isTourActive, setIsTourActive] = useState(false);
+
+  // Trigger tour if demo is requested
+  useEffect(() => {
+    if (activeTab === 'demo') {
+      setIsTourActive(true);
+      setActiveTab('dashboard');
+    }
+  }, [activeTab]);
 
   const [zoomLevel, setZoomLevel] = useState(15);
   const [cursorCoords, setCursorCoords] = useState(null);
@@ -501,6 +513,18 @@ export default function App() {
           </div>
         )}
 
+        {/* Explainable AI Agronomic Intelligence Deep Dive */}
+        {activeTab === 'ai-insights' && (
+          <div className="w-full h-full overflow-y-auto p-4 md:p-6 lg:p-8 block">
+            <AiInsightsPanel 
+              locationId={locationData?.id || selectedLocationId}
+              locationData={locationData}
+              latestReading={latestReading}
+              onBack={() => setActiveTab(currentUser?.role === 'user' ? 'user-dashboard' : 'dashboard')}
+            />
+          </div>
+        )}
+
         {/* Our Team Project View */}
         {activeTab === 'team' && (
           <div className="w-full h-full overflow-y-auto block">
@@ -520,6 +544,15 @@ export default function App() {
         activeTab={activeTab}
         isLive={isLive}
       />
+
+      {/* Interactive Floating AI Demo Tour HUD */}
+      {isTourActive && (
+        <DemoTour 
+          activeTab={activeTab} 
+          setActiveTab={setActiveTab} 
+          onClose={() => setIsTourActive(false)} 
+        />
+      )}
     </div>
   );
 }

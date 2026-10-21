@@ -53,7 +53,11 @@ export default function DashboardView({
   return (
     <div className="flex-1 w-full h-full overflow-y-auto bg-slate-950 text-slate-100 p-4 md:p-6 lg:p-8 space-y-6 font-sans">
       {/* AI Insights Card */}
-      <AiInsightsCard locationId={locationData?.id || 'LOC_001'} setActiveTab={setActiveTab} />
+      <AiInsightsCard 
+        locationData={locationData} 
+        latestReading={latestReading} 
+        setActiveTab={setActiveTab} 
+      />
 
       {/* Header */}
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">

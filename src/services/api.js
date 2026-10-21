@@ -6,6 +6,20 @@ const shouldAttemptBackend = hasCustomApiUrl || isLocal;
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocal ? 'http://127.0.0.1:8000/api/v1' : '');
 
+// Safe fetch with built-in timeout to prevent UI freezes when backend is offline
+async function fetchWithTimeout(url, options = {}, timeoutMs = 1500) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
 // Built-in Demo Accounts (Available both on backend and as resilient offline/Vercel fallback)
 const BUILTIN_USERS = [
   {
@@ -110,11 +124,11 @@ export async function loginUser(username, password) {
   // 1. Attempt Live Backend Login if running locally or custom backend URL is configured
   if (shouldAttemptBackend && API_BASE_URL) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: cleanUsername, password })
-      });
+      }, 1000);
 
       if (response.ok) {
         const data = await response.json();
@@ -181,11 +195,11 @@ export async function registerUser(userData) {
   // 1. Attempt Live Backend Registration if reachable
   if (shouldAttemptBackend && API_BASE_URL) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
-      });
+      }, 1500);
 
       if (response.ok) {
         const data = await response.json();
@@ -260,9 +274,9 @@ export async function fetchCurrentUserProfile() {
 
   if (shouldAttemptBackend && API_BASE_URL) {
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/auth/me`, {
         headers: getAuthHeaders()
-      });
+      }, 1500);
       if (response.ok) {
         const user = await response.json();
         setStoredUser(user);
@@ -456,9 +470,9 @@ export async function fetchFarmComparison(locationIds = null) {
 export async function fetchIrrigationPrediction(locationId = 'LOC_001') {
   if (shouldAttemptBackend && API_BASE_URL) {
     try {
-      const response = await fetch(`${API_BASE_URL}/locations/${locationId}/ai/prediction`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations/${locationId}/ai/prediction`, {
         headers: getAuthHeaders()
-      });
+      }, 1500);
       if (response.ok) {
         return await response.json();
       }
@@ -471,9 +485,9 @@ export async function fetchIrrigationPrediction(locationId = 'LOC_001') {
 export async function fetchSoilHealthReport(locationId = 'LOC_001') {
   if (shouldAttemptBackend && API_BASE_URL) {
     try {
-      const response = await fetch(`${API_BASE_URL}/locations/${locationId}/ai/report`, {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations/${locationId}/ai/report`, {
         headers: getAuthHeaders()
-      });
+      }, 1500);
       if (response.ok) {
         return await response.json();
       }
@@ -558,44 +572,40 @@ function _fallbackReport(locationId) {
 
 export async function fetchLocationById(locationId = 'LOC_001') {
   if (shouldAttemptBackend && API_BASE_URL) {
-    const response = await fetch(`${API_BASE_URL}/locations/${locationId}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch location ${locationId}: ${response.statusText}`);
-    }
-    return response.json();
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations/${locationId}`, {}, 1500);
+      if (response.ok) return response.json();
+    } catch (e) {}
   }
   return null;
 }
 
 export async function fetchLatestReading(locationId = 'LOC_001') {
   if (shouldAttemptBackend && API_BASE_URL) {
-    const response = await fetch(`${API_BASE_URL}/locations/${locationId}/latest`);
-    if (!response.ok) {
-      return null;
-    }
-    return response.json();
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations/${locationId}/latest`, {}, 1500);
+      if (response.ok) return response.json();
+    } catch (e) {}
   }
   return null;
 }
 
 export async function fetchEvaluation(locationId = 'LOC_001') {
   if (shouldAttemptBackend && API_BASE_URL) {
-    const response = await fetch(`${API_BASE_URL}/locations/${locationId}/evaluation`);
-    if (!response.ok) {
-      return null;
-    }
-    return response.json();
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations/${locationId}/evaluation`, {}, 1500);
+      if (response.ok) return response.json();
+    } catch (e) {}
   }
   return null;
 }
 
 export async function fetchAllLocations() {
   if (shouldAttemptBackend && API_BASE_URL) {
-    const response = await fetch(`${API_BASE_URL}/locations`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch locations: ${response.statusText}`);
-    }
-    return response.json();
+    try {
+      const response = await fetchWithTimeout(`${API_BASE_URL}/locations`, {}, 1500);
+      if (response.ok) return response.json();
+    } catch (e) {}
   }
   return [];
 }

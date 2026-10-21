@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { downloadHistoricalDataCsv, fetchIrrigationPrediction } from '../services/api';
 import SoilReportModal from './SoilReportModal';
+import AiInsightsCard from './AiInsightsCard';
 
 export default function UserDashboardView({
   currentUser,
@@ -159,6 +160,12 @@ export default function UserDashboardView({
       </div>
 
       <div className="max-w-7xl mx-auto space-y-6">
+        {/* Real-time AI Agronomic Neural Engine & Crop Intelligence Card */}
+        <AiInsightsCard 
+          locationData={loc} 
+          latestReading={latestReading} 
+          setActiveTab={setActiveTab} 
+        />
         
         {/* Top Highlight Cards: Health Score & Farm Status */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

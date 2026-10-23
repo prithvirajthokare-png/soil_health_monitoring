@@ -10,7 +10,7 @@ import { Brain, Sparkles, TrendingUp, Droplets, ChevronRight, Cpu } from 'lucide
  * and dynamic crop suitability.
  */
 export default function AiInsightsCard({ locationData, latestReading, setActiveTab }) {
-  const [selectedCropId, setSelectedCropId] = useState('tomato');
+  const [selectedCropId, setSelectedCropId] = useState('general');
   const [prediction, setPrediction] = useState(null);
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);

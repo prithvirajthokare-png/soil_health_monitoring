@@ -28,7 +28,7 @@ import {
  * review moisture decay curves, and execute precise nutrient prescriptions.
  */
 export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, latestReading, onBack, onStartTour }) {
-  const [selectedCropId, setSelectedCropId] = useState('tomato');
+  const [selectedCropId, setSelectedCropId] = useState('general');
   const [selectedStage, setSelectedStage] = useState(null);
   const [copied, setCopied] = useState(false);
   const [prediction, setPrediction] = useState(null);

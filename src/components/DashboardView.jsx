@@ -10,6 +10,7 @@ export default function DashboardView({
   locationsList,
   onSelectLocation,
   setActiveTab,
+  activeTab,
 }) {
   const stats = useMemo(() => {
     const list = locationsList || [];

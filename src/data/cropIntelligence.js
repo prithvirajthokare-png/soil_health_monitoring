@@ -6,6 +6,27 @@
 
 export const SUPPORTED_CROPS = [
   {
+    id: 'general',
+    name: 'General Plant',
+    category: 'General',
+    icon: '🌱',
+    stages: ['Seedling', 'Vegetative', 'Mature', 'Harvest'],
+    defaultStage: 'Vegetative',
+    targets: {
+      moisture: { min: 20, max: 40, trigger: 18, unit: '%' },
+      temperature: { min: 15, max: 32, unit: '°C' },
+      ph: { min: 5.5, max: 7.5, unit: 'pH' },
+      ec: { min: 0.8, max: 3.0, unit: 'mS/cm' },
+      n: { min: 80, max: 200, unit: 'mg/kg' },
+      p: { min: 25, max: 80, unit: 'mg/kg' },
+      k: { min: 100, max: 280, unit: 'mg/kg' }
+    },
+    aiDiseaseRisks: [
+      { disease: 'Root Stress', triggerCond: 'Moisture below 15% or above 45%', baseProb: 10 },
+      { disease: 'Nutrient Deficiency', triggerCond: 'N below 60 or P below 20 or K below 80', baseProb: 8 }
+    ]
+  },
+  {
     id: 'tomato',
     name: 'Tomato (Solanum lycopersicum)',
     category: 'Vegetables',

@@ -110,11 +110,11 @@ export default function AdminHubView({
         return {
           location_id: loc.id,
           name: loc.farmerName ? `${loc.farmerName} Farm` : (loc.name || loc.farmName),
-          current_crop: loc.crop || loc.current_crop || 'Tomato',
+          current_crop: loc.crop || loc.current_crop || 'General Plant',
           growth_stage: loc.growth_stage ?? 1,
           sensor_id: loc.sensor_id || loc.sensorId || 'SN_001',
           soil_type: loc.soil_type || 'Loamy Silt',
-          coverage_area: loc.coverage_area || '48.5 Hectares',
+          coverage_area: loc.coverage_area || 'Sensor Pod',
           status: loc.status || 'active',
           health_score: tele?.evaluation?.health_score ?? (loc.id === 'LOC_001' ? 100 : (loc.healthStatus === 'Critical' ? 42 : 88)),
           health_status: loc.healthStatus || 'Healthy',

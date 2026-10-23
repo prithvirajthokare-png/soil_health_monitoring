@@ -437,6 +437,7 @@ export default function App() {
               locationsList={visibleLocations}
               onSelectLocation={handleSelectLocation}
               setActiveTab={setActiveTab}
+              activeTab={activeTab}
             />
           </div>
         )}

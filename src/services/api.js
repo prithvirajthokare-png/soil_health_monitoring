@@ -647,7 +647,7 @@ export async function downloadHistoricalDataCsv(locationId = 'LOC_001', range = 
   const hoursCount = range === '1year' ? 365 : (range === '1month' ? 30 : 7);
   for (let i = 0; i < hoursCount; i++) {
     const d = new Date(now.getTime() - i * 3600 * 1000 * (range === '1year' ? 24 : 1));
-    rows.push(`${d.toISOString()},${locationId},Field Farm,Tomato,27.4,21.5,6.78,1.18,52.5,27.5,104.0,98.0`);
+    rows.push(`${d.toISOString()},${locationId},Field Farm,General Plant,27.4,21.5,6.78,1.18,52.5,27.5,104.0,98.0`);
   }
   const csvContent = headers + rows.join('\n');
   const blob = new Blob([csvContent], { type: 'text/csv' });

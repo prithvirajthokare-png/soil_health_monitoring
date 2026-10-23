@@ -38,9 +38,9 @@ export const SUPPORTED_LOCATIONS = [
     current_crop: 'general',
     crop: 'General Plant',
     soil_type: 'Loamy Silt',
-    coverage_area: '119.8 Acres',
-    fieldArea: '48.5',
-    areaUnit: 'Acres',
+    coverage_area: 'Sensor Pod',
+    fieldArea: '1',
+    areaUnit: 'Pod',
     sensor_id: 'SN_001',
     sensorId: 'SN_001',
     sensorStatus: 'ONLINE',
@@ -97,6 +97,24 @@ const getInitialLocations = () => {
   } catch (e) {}
   return list;
 };
+
+// Normalize backend location fields to match frontend display preferences
+function normalizeLocation(loc) {
+  if (!loc) return loc;
+  const normalized = { ...loc };
+  // Override backend crop values - use 'General Plant' as default display
+  if (normalized.current_crop && normalized.current_crop.toLowerCase() === 'tomato') {
+    normalized.current_crop = 'general';
+  }
+  if (normalized.crop && normalized.crop.toLowerCase() === 'tomato') {
+    normalized.crop = 'General Plant';
+  }
+  // Override backend coverage area
+  if (normalized.coverage_area === '48.5 Hectares') {
+    normalized.coverage_area = 'Sensor Pod';
+  }
+  return normalized;
+}
 
 export default function App() {
   // Authentication State
@@ -175,7 +193,7 @@ export default function App() {
         const merged = getInitialLocations().map(sup => {
           const remote = locs.find(l => l.id === sup.id);
           if (remote && sup.locationStatus === 'LIVE') {
-             const mergedLoc = { ...sup, ...remote };
+             const mergedLoc = normalizeLocation({ ...sup, ...remote });
              if (mergedLoc.id === 'LOC_001') {
                try {
                  const geomOverride = JSON.parse(localStorage.getItem('loc_001_geometry'));
@@ -211,7 +229,7 @@ export default function App() {
       SUPPORTED_LOCATIONS.find(l => l.id === locationId) || 
       SUPPORTED_LOCATIONS[0];
     
-    setLocationData(baseLoc);
+    setLocationData(normalizeLocation(baseLoc));
 
     // If DEMO location, use simulated telemetry immediately and avoid hitting the backend
     if (baseLoc.locationStatus === 'DEMO') {
@@ -240,7 +258,7 @@ export default function App() {
 
       if (state.location) {
         setLocationData(prev => {
-          const updated = { ...prev, ...state.location };
+          const updated = normalizeLocation({ ...prev, ...state.location });
           if (updated.id === 'LOC_001') {
             try {
               const geomOverride = JSON.parse(localStorage.getItem('loc_001_geometry'));

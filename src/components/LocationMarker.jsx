@@ -60,9 +60,11 @@ const LocationMarker = React.memo(({ locationData, latestReading, evaluationData
 
   const locName = locationData?.farmName || locationData?.name || 'Unknown Location';
   const farmerName = locationData?.farmerName || 'Unknown Farmer';
-  const cropName = locationData?.crop || locationData?.current_crop || 'Unknown';
+  const rawCrop = locationData?.crop || locationData?.current_crop || 'Unknown';
+  const cropName = (rawCrop.toLowerCase() === 'tomato' || rawCrop.toLowerCase() === 'tomato (solanum lycopersicum)') ? 'General Plant' : rawCrop;
   const soilType = locationData?.soil_type || 'Unknown';
-  const coverageArea = locationData?.fieldArea ? `${locationData.fieldArea} ${locationData.areaUnit}` : (locationData?.coverage_area || 'Unknown');
+  const rawCoverage = locationData?.fieldArea ? `${locationData.fieldArea} ${locationData.areaUnit}` : (locationData?.coverage_area || 'Unknown');
+  const coverageArea = rawCoverage === '48.5 Hectares' ? 'Sensor Pod' : rawCoverage;
   
   // For LIVE locations, telemetry is considered available if latestReading exists or it's LOC_001 demo baseline.
   const isDemo = locationData?.locationStatus === 'DEMO';
@@ -162,9 +164,7 @@ const LocationMarker = React.memo(({ locationData, latestReading, evaluationData
                 <h2 className="font-bold text-base text-slate-50 leading-tight">{locName}</h2>
                 <h3 className="font-semibold text-sm text-slate-300 mb-1">{farmerName}</h3>
                 <div className="flex items-center gap-2 text-[11px] text-slate-400">
-                  <span className="font-semibold text-emerald-400">{cropName}</span>
-                  <span>&bull;</span>
-                  <span>{coverageArea}</span>
+                  <span className="font-semibold text-emerald-400">Sensor Pod</span>
                 </div>
                 <p className="text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
                   <MapPin className="w-2.5 h-2.5" />

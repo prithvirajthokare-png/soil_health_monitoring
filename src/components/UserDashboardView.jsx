@@ -70,7 +70,7 @@ export default function UserDashboardView({
   const triggerMoisture = targets?.irrigation_trigger_pct ?? 20.0;
 
   const recommendations = evaluationData?.recommendations || [
-    `All soil health metrics for ${farmName} are currently within target thresholds for active crop stage.`,
+    `All soil health metrics for ${farmName} are currently within optimal target thresholds.`,
     `Maintain scheduled irrigation schedule; soil moisture is currently optimal.`
   ];
 
@@ -129,7 +129,7 @@ export default function UserDashboardView({
             <MapPin className="w-3.5 h-3.5 text-slate-400" />
             <span>{loc.village || 'Surathkal'}, {loc.district || 'Dakshina Kannada'}, {loc.state || 'Karnataka'}</span>
             <span>&bull;</span>
-            <span>Area: {loc.coverage_area || '48.5 Hectares'}</span>
+            <span>Sensor Pod</span>
           </p>
         </div>
 
@@ -167,137 +167,6 @@ export default function UserDashboardView({
           setActiveTab={setActiveTab} 
         />
         
-        {/* Top Highlight Cards: Health Score & Farm Status */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          
-          {/* Health Index Card */}
-          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
-                  Overall Soil Health Index
-                </span>
-                <h3 className="text-lg font-bold text-slate-100 mt-0.5">
-                  Automated Agronomic Score
-                </h3>
-              </div>
-              <div className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
-                healthScore >= 80 
-                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
-                  : (healthScore >= 50 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30')
-              }`}>
-                <Activity className="w-3.5 h-3.5" />
-                <span>{healthStatus}</span>
-              </div>
-            </div>
-
-            <div className="py-6 flex flex-col sm:flex-row items-center gap-6">
-              <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-slate-800 bg-slate-950/60 shadow-inner shrink-0">
-                <div className="text-center">
-                  <div className="text-3xl font-black font-mono text-emerald-400">{healthScore}</div>
-                  <div className="text-[10px] uppercase font-bold text-slate-500">Out of 100</div>
-                </div>
-              </div>
-              <div className="space-y-2 text-xs w-full">
-                <div className="flex justify-between text-slate-300">
-                  <span>Current Crop:</span>
-                  <span className="font-bold text-slate-100 capitalize">{loc.crop || loc.current_crop || 'Tomato'}</span>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Growth Stage:</span>
-                  <span className="font-bold text-emerald-400">Vegetative (Stage {loc.growth_stage ?? 1})</span>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Soil Classification:</span>
-                  <span className="font-bold text-slate-100">{loc.soil_type || 'Loamy Silt'}</span>
-                </div>
-                <div className="flex justify-between text-slate-300">
-                  <span>Wireless Node:</span>
-                  <span className="font-mono text-xs font-bold text-emerald-400 flex items-center gap-1">
-                    <Radio className="w-3 h-3" />
-                    <span>{loc.sensor_id || loc.sensorId || 'SN_001'} (Online)</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
-              <span>Telemetry Node: Dragino RS485-LN</span>
-              <button
-                onClick={() => setActiveTab('map')}
-                className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
-              >
-                <span>View on Map</span>
-                <ChevronRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Actionable Recommendations Card */}
-          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-emerald-400" />
-                  <h3 className="font-bold text-sm text-slate-100 uppercase tracking-wider">
-                    Agronomic Recommendations & Advisory
-                  </h3>
-                </div>
-                <span className="text-[10px] font-mono bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
-                  Target-Driven
-                </span>
-              </div>
-
-              <div className="space-y-3">
-                {recommendations.map((rec, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                    <p className="text-xs text-slate-300 leading-relaxed">{rec}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Export historical bar */}
-            <div className="pt-4 mt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
-              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
-                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Export Telemetry Records (CSV):</span>
-              </span>
-              <div className="flex items-center gap-2">
-                {[
-                  { key: '1week', label: '1 Week' },
-                  { key: '1month', label: '1 Month' },
-                  { key: '1year', label: '1 Year' }
-                ].map(opt => (
-                  <button
-                    key={opt.key}
-                    onClick={() => handleDownload(opt.key, opt.label)}
-                    disabled={downloadingRange !== null}
-                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5 disabled:opacity-50"
-                  >
-                    {downloadingRange === opt.key ? (
-                      <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
-                    ) : (
-                      <Download className="w-3 h-3 text-emerald-400" />
-                    )}
-                    <span>{opt.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {downloadStatus && (
-              <div className={`mt-2 p-2 rounded-xl text-xs flex items-center gap-2 ${
-                downloadStatus.type === 'success' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-red-950/80 text-red-300 border border-red-500/40'
-              }`}>
-                {downloadStatus.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <AlertCircle className="w-3.5 h-3.5 text-red-400" />}
-                <span>{downloadStatus.message}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* Real-Time Sensor Telemetry Grid */}
         <div>
           <div className="flex items-center justify-between mb-4">
@@ -421,6 +290,133 @@ export default function UserDashboardView({
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* Top Highlight Cards: Health Score & Farm Status */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          
+          {/* Health Index Card */}
+          <div className="lg:col-span-5 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400">
+                  Overall Soil Health Index
+                </span>
+                <h3 className="text-lg font-bold text-slate-100 mt-0.5">
+                  Automated Agronomic Score
+                </h3>
+              </div>
+              <div className={`px-2.5 py-1 rounded-full text-xs font-bold border flex items-center gap-1.5 ${
+                healthScore >= 80 
+                  ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' 
+                  : (healthScore >= 50 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 'bg-rose-500/10 text-rose-400 border-rose-500/30')
+              }`}>
+                <Activity className="w-3.5 h-3.5" />
+                <span>{healthStatus}</span>
+              </div>
+            </div>
+
+            <div className="py-6 flex flex-col sm:flex-row items-center gap-6">
+              <div className="relative flex items-center justify-center w-28 h-28 rounded-full border-4 border-slate-800 bg-slate-950/60 shadow-inner shrink-0">
+                <div className="text-center">
+                  <div className="text-3xl font-black font-mono text-emerald-400">{healthScore}</div>
+                  <div className="text-[10px] uppercase font-bold text-slate-500">Out of 100</div>
+                </div>
+              </div>
+              <div className="space-y-2 text-xs w-full">
+                <div className="flex justify-between text-slate-300">
+                  <span>Soil Classification:</span>
+                  <span className="font-bold text-slate-100">{loc.soil_type || 'Loamy Silt'}</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Pod Status:</span>
+                  <span className="font-bold text-emerald-400">Active Sensor Node</span>
+                </div>
+                <div className="flex justify-between text-slate-300">
+                  <span>Wireless Node:</span>
+                  <span className="font-mono text-xs font-bold text-emerald-400 flex items-center gap-1">
+                    <Radio className="w-3 h-3" />
+                    <span>{loc.sensor_id || loc.sensorId || 'SN_001'} (Online)</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+              <span>Telemetry Node: Dragino RS485-LN</span>
+              <button
+                onClick={() => setActiveTab('map')}
+                className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1"
+              >
+                <span>View on Map</span>
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Actionable Recommendations Card */}
+          <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-3xl p-6 shadow-xl flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-emerald-400" />
+                  <h3 className="font-bold text-sm text-slate-100 uppercase tracking-wider">
+                    Agronomic Recommendations & Advisory
+                  </h3>
+                </div>
+                <span className="text-[10px] font-mono bg-slate-800 text-slate-400 px-2 py-0.5 rounded">
+                  Target-Driven
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {recommendations.map((rec, idx) => (
+                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-start gap-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                    <p className="text-xs text-slate-300 leading-relaxed">{rec}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quick Export historical bar */}
+            <div className="pt-4 mt-4 border-t border-slate-800 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-slate-400 font-medium flex items-center gap-1.5">
+                <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Export Telemetry Records (CSV):</span>
+              </span>
+              <div className="flex items-center gap-2">
+                {[
+                  { key: '1week', label: '1 Week' },
+                  { key: '1month', label: '1 Month' },
+                  { key: '1year', label: '1 Year' }
+                ].map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => handleDownload(opt.key, opt.label)}
+                    disabled={downloadingRange !== null}
+                    className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    {downloadingRange === opt.key ? (
+                      <RefreshCw className="w-3 h-3 text-emerald-400 animate-spin" />
+                    ) : (
+                      <Download className="w-3 h-3 text-emerald-400" />
+                    )}
+                    <span>{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {downloadStatus && (
+              <div className={`mt-2 p-2 rounded-xl text-xs flex items-center gap-2 ${
+                downloadStatus.type === 'success' ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/40' : 'bg-red-950/80 text-red-300 border border-red-500/40'
+              }`}>
+                {downloadStatus.type === 'success' ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> : <AlertCircle className="w-3.5 h-3.5 text-red-400" />}
+                <span>{downloadStatus.message}</span>
+              </div>
+            )}
           </div>
         </div>
 

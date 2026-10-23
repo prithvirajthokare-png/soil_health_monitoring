@@ -5,32 +5,32 @@ const TOUR_STEPS = [
   { 
     id: 'dashboard', 
     tab: 'dashboard', 
-    title: '1. AI Agronomic Intelligence & Health Dashboard',
-    desc: 'Real-time composite health indices, machine learning confidence scores, and crop matrix.'
+    title: '1. Soil Health & Farm Overview',
+    desc: 'See overall soil health score, active sensors, and farm condition at a glance.'
   },
   { 
     id: 'ai-insights', 
     tab: 'ai-insights', 
-    title: '2. Explainable AI (XAI) & Crop Suitability Simulator',
-    desc: 'Interactive crop selector, SHAP feature attributions, and predictive irrigation decay models.'
+    title: '2. Smart Soil AI & Crop Suitability',
+    desc: 'Check which crops grow best in your soil and get automated watering predictions.'
   },
   { 
     id: 'map', 
     tab: 'map', 
-    title: '3. Precision Agricultural GIS & Satellite Mapping',
-    desc: 'Spatial polygon field boundaries, node telemetry coordinates, and sensor status overlays.'
+    title: '3. Farm Satellite Map',
+    desc: 'View your field boundaries, sensor pod locations, and live soil status on a map.'
   },
   { 
     id: 'locations', 
     tab: 'locations', 
-    title: '4. Farm Registry & Micro-Climate Sites',
-    desc: 'Centralized directory of monitored fields across multiple agricultural districts.'
+    title: '4. Farm & Sensor Registry',
+    desc: 'Easy directory of all your monitored fields, sensor pods, and connected devices.'
   },
   { 
     id: 'alerts', 
     tab: 'alerts', 
-    title: '5. Real-Time Telemetry & Threshold Alerts',
-    desc: 'Automated anomaly detection for rootzone moisture deficit, nitrogen exhaustion, and salinity.'
+    title: '5. Instant Alerts & Warnings',
+    desc: 'Get notified immediately if soil gets too dry, salty, or low on nutrients.'
   }
 ];
 

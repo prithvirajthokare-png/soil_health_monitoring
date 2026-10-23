@@ -376,7 +376,7 @@ export default function SoilReportModal({ locationId, locationName, onClose }) {
                           {meta?.location_id}
                         </span>
                         <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
-                          {meta?.current_crop?.toUpperCase()}
+                          {(meta?.current_crop || 'General Plant').toUpperCase()}
                         </span>
                         {meta?.soil_type && (
                           <span className="text-[10px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">

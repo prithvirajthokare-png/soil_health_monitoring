@@ -101,14 +101,14 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-xl font-extrabold text-white tracking-tight">
-                  Neural Agronomy & Explainable AI (XAI)
+                  Smart Soil AI & Crop Health Advisory
                 </h1>
                 <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  ML Inference Engine
+                  AI Soil Health
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Multi-Crop Machine Learning Diagnostics &bull; Node: <span className="font-mono text-emerald-400">{locationId}</span> &bull; Model: Random Forest Regressor &plus; Agronomic ODE
+                Crop Health Intelligence &bull; Node: <span className="font-mono text-emerald-400">{locationId}</span> &bull; Real-time AI Analysis
               </p>
             </div>
           </div>
@@ -150,11 +150,11 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
           <div className="flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
-              Dynamic Crop Selector & Growth Phase Optimizer
+              Crop Suitability Simulator
             </span>
           </div>
           <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
-            Select any crop to simulate AI suitability
+            Select any crop below to see if soil conditions are ideal
           </span>
         </div>
 
@@ -297,10 +297,10 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
           <div>
             <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
               <Cpu className="w-4 h-4 text-emerald-400" />
-              Explainable AI (XAI) &ndash; Sensor Feature Attributions
+              What is Affecting Soil Health &ndash; Key Metrics
             </h2>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              SHAP-style mathematical influence of each telemetry variable on the overall {activeCrop.name.split(' ')[0]} health score.
+              Clear breakdown of how moisture, pH, and nutrients affect your {activeCrop.name.split(' ')[0]} health score.
             </p>
           </div>
           <div className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 text-[11px] font-mono font-bold hidden sm:block">
@@ -343,7 +343,7 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            AI Prescriptive Agronomic Advisory for Farmers
+            Recommended Actions for Farmers
           </h2>
           <span className="text-[11px] text-emerald-400 font-mono">
             {aiDiagnostic.prescriptions.length} Actionable Items

@@ -514,7 +514,7 @@ function _fallbackReport(locationId) {
     meta: {
       location_id: locationId,
       location_name: 'Idea Factory Research Farm',
-      current_crop: 'tomato',
+      current_crop: 'General Plant',
       health_score: 85,
       health_status: 'Optimal',
       report_engine: 'offline-demo',

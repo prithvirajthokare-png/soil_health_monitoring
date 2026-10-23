@@ -69,21 +69,21 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
           <div>
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-slate-100 uppercase tracking-wider">
-                AI Agronomic Neural Engine
+                Smart Soil AI Assistant
               </span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                v2.4
+                Live
               </span>
             </div>
             <div className="text-[10px] text-emerald-400/80 font-mono">
-              RandomForest + ODE Moisture Decay
+              Soil Health & Moisture Prediction
             </div>
           </div>
         </div>
 
         <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-950/80 border border-slate-800 text-[10px] text-slate-300 font-mono">
           <Cpu className="w-3 h-3 text-emerald-400" />
-          <span>96.4% ML Conf.</span>
+          <span>High Accuracy</span>
         </div>
       </div>
 
@@ -92,7 +92,7 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
         {/* Suitability Score */}
         <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
           <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-            AI Crop Compatibility
+            Crop Suitability
           </div>
           <div className="flex items-baseline gap-1.5 mt-1">
             <span className={`text-3xl font-extrabold ${aiDiagnostic.scoreColor}`}>
@@ -108,7 +108,7 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
         {/* Selected Crop Indicator */}
         <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
           <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-            Active Crop Profile
+            Selected Crop
           </div>
           <div className="flex items-center gap-1.5 mt-1">
             <span className="text-lg">{aiDiagnostic.crop.icon}</span>
@@ -125,13 +125,13 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
         <div className="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
           <div className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider flex items-center gap-1">
             <Droplets className="w-3 h-3 text-cyan-400" />
-            <span>Predicted Irrigation</span>
+            <span>Watering Estimate</span>
           </div>
           <div className="text-xl font-bold text-cyan-300 mt-1">
             ~{aiDiagnostic.irrigation.hoursToTrigger} hrs
           </div>
           <div className="text-[10px] text-slate-400 truncate mt-0.5">
-            Until {aiDiagnostic.irrigation.triggerPct}% moisture trigger
+            Until soil reaches {aiDiagnostic.irrigation.triggerPct}% moisture
           </div>
         </div>
       </div>
@@ -140,7 +140,7 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
       <div className="mt-3 p-2.5 rounded-xl bg-emerald-950/30 border border-emerald-500/20 text-xs text-slate-300 flex items-start gap-2">
         <Sparkles className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
         <div className="flex-1 text-[11px] leading-relaxed line-clamp-2 text-slate-300">
-          <span className="font-semibold text-emerald-300">AI Advisory: </span>
+          <span className="font-semibold text-emerald-300">AI Advice: </span>
           {aiDiagnostic.prescriptions[0]?.action || aiDiagnostic.irrigation.advice}
         </div>
         <ChevronRight className="w-4 h-4 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0 mt-0.5" />
@@ -150,10 +150,10 @@ export default function AiInsightsCard({ locationData, latestReading, setActiveT
       <div className="mt-2.5 flex items-center justify-between text-[10px] text-slate-400">
         <span className="flex items-center gap-1 font-mono text-[9px] text-slate-400">
           <TrendingUp className="w-3 h-3 text-emerald-400" />
-          Continuous Real-time Inference
+          Continuous Soil Monitoring
         </span>
         <span className="text-emerald-400 font-semibold group-hover:underline flex items-center gap-0.5">
-          View Explainable AI (XAI) Deep Dive &rarr;
+          View Detailed AI Analysis &rarr;
         </span>
       </div>
     </div>

@@ -18,9 +18,12 @@ export default function GlobalAlert({ locationData, evaluationData, latestReadin
       
       if (!dismissedFingerprints.has(fingerprint)) {
         let problem = "Abnormal conditions detected";
-        const recs = evaluationData.recommendations?.[0] || '';
-        if (recs.startsWith('Address:')) {
+        const rawRec = evaluationData?.recommendations?.[0];
+        const recs = typeof rawRec === 'string' ? rawRec : (rawRec?.action || rawRec?.message || '');
+        if (typeof recs === 'string' && recs.startsWith('Address:')) {
           problem = recs.replace('Address: ', '');
+        } else if (recs) {
+          problem = typeof recs === 'string' ? recs : JSON.stringify(recs);
         }
         
         setActiveAlert({

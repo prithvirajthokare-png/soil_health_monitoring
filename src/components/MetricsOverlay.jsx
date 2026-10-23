@@ -134,7 +134,7 @@ export default function MetricsOverlay({ locationData, latestReading, evaluation
                   ) : (
                     <AlertCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                   )}
-                  <span>{rec}</span>
+                  <span>{typeof rec === 'string' ? rec : (rec?.action || rec?.message || JSON.stringify(rec))}</span>
                 </div>
               ))}
             </div>

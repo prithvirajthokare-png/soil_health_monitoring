@@ -98,7 +98,7 @@ export default function App() {
     if (!currentUser || currentUser.role === 'admin' || isGuestMode) {
       return locationsList;
     }
-    const assignedIds = currentUser.assigned_farms || ['LOC_001'];
+    const assignedIds = Array.isArray(currentUser.assigned_farms) ? currentUser.assigned_farms : ['LOC_001'];
     const filtered = locationsList.filter(l => assignedIds.includes(l.id));
     return filtered.length > 0 ? filtered : [locationsList[0]];
   }, [currentUser, isGuestMode, locationsList]);
@@ -106,7 +106,7 @@ export default function App() {
   // Selected Location ID
   const [selectedLocationId, setSelectedLocationId] = useState(() => {
     const user = getStoredUser();
-    if (user?.role === 'user' && user.assigned_farms && user.assigned_farms.length > 0) {
+    if (user?.role === 'user' && Array.isArray(user?.assigned_farms) && user.assigned_farms.length > 0) {
       return user.assigned_farms[0];
     }
     return 'LOC_001';

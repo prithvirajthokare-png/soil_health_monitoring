@@ -91,8 +91,11 @@ export function setStoredToken(token) {
 export function getStoredUser() {
   try {
     const raw = localStorage.getItem('terrapulse_auth_user');
-    return raw ? JSON.parse(raw) : null;
+    if (!raw) return null;
+    const u = JSON.parse(raw);
+    return u && typeof u === 'object' ? u : null;
   } catch (e) {
+    try { localStorage.removeItem('terrapulse_auth_user'); } catch (_) {}
     return null;
   }
 }

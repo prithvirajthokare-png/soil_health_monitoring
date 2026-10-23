@@ -371,12 +371,15 @@ export default function UserDashboardView({
               </div>
 
               <div className="space-y-3">
-                {recommendations.map((rec, idx) => (
-                  <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-start gap-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
-                    <p className="text-xs text-slate-300 leading-relaxed">{rec}</p>
-                  </div>
-                ))}
+                {recommendations.map((rec, idx) => {
+                  const recText = typeof rec === 'string' ? rec : (rec?.action || rec?.text || rec?.message || JSON.stringify(rec));
+                  return (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-950/70 border border-slate-800/80 flex items-start gap-3">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
+                      <p className="text-xs text-slate-300 leading-relaxed">{recText}</p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 

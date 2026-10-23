@@ -78,8 +78,10 @@ const LocationMarker = React.memo(({ locationData, latestReading, evaluationData
   const pVal = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.phosphorus_mg_kg ?? 27.5) : latestReading.phosphorus_mg_kg) : '—';
   const kVal = hasTelemetry ? (locId === 'LOC_001' ? (latestReading?.potassium_mg_kg ?? 104.0) : latestReading.potassium_mg_kg) : '—';
 
+  const rawFirstRec = evaluationData?.recommendations?.[0];
+  const recText = typeof rawFirstRec === 'string' ? rawFirstRec : (rawFirstRec?.action || rawFirstRec?.message);
   const recommendation = hasTelemetry 
-    ? (evaluationData?.recommendations?.[0] || (locId === 'LOC_001' ? 'All soil health metrics are within optimal agronomic targets.' : 'Metrics within operational bounds.'))
+    ? (recText || (locId === 'LOC_001' ? 'All soil health metrics are within optimal agronomic targets.' : 'Metrics within operational bounds.'))
     : (isDemo ? 'Simulated demo telemetry shown.' : 'Demo location — telemetry disconnected.');
 
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;

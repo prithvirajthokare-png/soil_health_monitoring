@@ -76,7 +76,7 @@ export const FIELD_DETAILS = {
     elevation: 'Unknown / To be provided',
     coverageArea: '119.8 Acres',
     soilClassification: 'Loamy Silt',
-    currentCrop: 'Tomato',
+    currentCrop: 'General Plant',
     topography: 'Unknown / To be provided',
     sensorDeployment: {
       totalNodes: 1,

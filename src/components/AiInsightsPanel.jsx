@@ -35,12 +35,12 @@ export default function AiInsightsPanel({ locationId = 'LOC_001', locationData, 
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Sync crop from location metadata if provided
+  // Sync crop from location metadata if provided (skip generic defaults)
   useEffect(() => {
     const cropRaw = locationData?.current_crop || locationData?.crop;
-    if (cropRaw && typeof cropRaw === 'string') {
+    if (cropRaw && typeof cropRaw === 'string' && cropRaw.toLowerCase() !== 'general') {
       const match = cropRaw.toLowerCase();
-      const found = SUPPORTED_CROPS.find(c => match.includes(c.id) || c.name.toLowerCase().includes(match));
+      const found = SUPPORTED_CROPS.find(c => c.id !== 'general' && (match.includes(c.id) || c.name.toLowerCase().includes(match)));
       if (found) {
         setSelectedCropId(found.id);
         setSelectedStage(found.defaultStage);

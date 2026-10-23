@@ -3,7 +3,7 @@ export const LOCATION_LOC_001 = {
   id: 'LOC_001',
   code: 'LOC_001',
   name: 'Idea Factory',
-  crop: 'tomato',
+  crop: 'general',
   soilType: 'Loamy Silt',
   coordinates: {
     lat: 13.0094631,
@@ -33,7 +33,7 @@ export const DEMO_LOC_001_READING = {
 
 export const DEMO_LOC_001_EVALUATION = {
   location_id: 'LOC_001',
-  crop_type: 'tomato',
+  crop_type: 'general',
   growth_stage: 1,
   health_score: 100,
   health_status: 'Optimal',
@@ -41,7 +41,7 @@ export const DEMO_LOC_001_EVALUATION = {
     'All soil health metrics for Idea Factory are within optimal agronomic targets.'
   ],
   stage_targets: {
-    plant_type: 'tomato',
+    plant_type: 'general',
     growth_stage: 1,
     stage_name: 'vegetative',
     n_target_mg_kg: 53.8,

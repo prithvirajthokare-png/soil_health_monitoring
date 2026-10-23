@@ -22,7 +22,7 @@ import {
 import { DEMO_LOC_001_READING, DEMO_LOC_001_EVALUATION } from './data/mockLocation';
 import { DEMO_LOCATIONS } from './data/demoLocations';
 
-// Stable deterministic list of the 50 supported locations (1 LIVE, 49 DEMO)
+// Stable deterministic list of the supported locations (2 LIVE, 49 DEMO)
 export const SUPPORTED_LOCATIONS = [
   { 
     id: 'LOC_001', 
@@ -35,8 +35,8 @@ export const SUPPORTED_LOCATIONS = [
     country: 'India',
     latitude: 13.0094631, 
     longitude: 74.7952437,
-    current_crop: 'tomato',
-    crop: 'Tomato',
+    current_crop: 'general',
+    crop: 'General Plant',
     soil_type: 'Loamy Silt',
     coverage_area: '119.8 Acres',
     fieldArea: '48.5',
@@ -51,8 +51,38 @@ export const SUPPORTED_LOCATIONS = [
     cropCycleStart: '2025-10-01',
     cropCycleEnd: '2026-12-01',
     fieldBoundary: null,
-    cropHistory: ['Tomato'],
+    cropHistory: ['General Plant'],
     installationDate: '2024-05-15'
+  },
+  {
+    id: 'LOC_002',
+    name: 'Test Location',
+    farmerName: 'Ramesh Patil',
+    farmName: 'Patil Farm',
+    village: 'Pune Rural',
+    district: 'Pune',
+    state: 'Maharashtra',
+    country: 'India',
+    latitude: 20.1929232,
+    longitude: 76.5352501,
+    current_crop: 'general',
+    crop: 'General Plant',
+    soil_type: 'Unknown / To be provided',
+    coverage_area: 'Sensor Pod',
+    fieldArea: '1',
+    areaUnit: 'Pod',
+    sensor_id: 'SN_002',
+    sensorId: 'SN_002',
+    sensorStatus: 'OFFLINE',
+    locationStatus: 'LIVE',
+    locationType: 'FIELD',
+    alertStatus: 'NORMAL',
+    healthStatus: 'Healthy',
+    cropCycleStart: '2026-01-01',
+    cropCycleEnd: '2026-12-01',
+    fieldBoundary: null,
+    cropHistory: [],
+    installationDate: '2026-10-01'
   },
   ...DEMO_LOCATIONS
 ];

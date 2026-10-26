@@ -1,5 +1,5 @@
 import React from 'react';
-import { Marker, Popup, Circle, Polygon } from 'react-leaflet';
+import { Marker, Popup, Polygon } from 'react-leaflet';
 import L from 'leaflet';
 import { 
   Droplets, 
@@ -88,13 +88,11 @@ const LocationMarker = React.memo(({ locationData, latestReading, evaluationData
 
   const formattedCoords = `${Math.abs(lat).toFixed(4)}°${lat >= 0 ? 'N' : 'S'} ${Math.abs(lng).toFixed(4)}°${lng >= 0 ? 'E' : 'W'}`;
 
-  // Use the actual field boundary if available, else standard rect around point if FIELD type
-  const fieldBoundary = locationData?.fieldBoundary || (locationData?.locationType !== 'POINT' && locationData?.locationType !== 'PLANT' ? [
-    [lat + 0.0035, lng - 0.0040],
-    [lat + 0.0037, lng + 0.0042],
-    [lat - 0.0035, lng + 0.0040],
-    [lat - 0.0037, lng - 0.0042]
-  ] : null);
+  // Only render custom boundary if explicitly defined by the user (array of >= 3 points).
+  // Sensor pods monitor a specific point and do not display synthetic boundaries or polygons.
+  const fieldBoundary = (Array.isArray(locationData?.fieldBoundary) && locationData.fieldBoundary.length >= 3)
+    ? locationData.fieldBoundary
+    : null;
 
   const handleMarkerClick = () => {
     if (onSelect) {
@@ -119,20 +117,7 @@ const LocationMarker = React.memo(({ locationData, latestReading, evaluationData
         />
       )}
 
-      {/* Coverage Radius */}
-      {isSelected && locationData?.locationType !== 'POINT' && locationData?.locationType !== 'PLANT' && !fieldBoundary && (
-        <Circle 
-          center={position} 
-          radius={350} 
-          pathOptions={{
-            color: isLive ? '#10b981' : '#3b82f6',
-            weight: 1,
-            opacity: 0.4,
-            fillColor: isLive ? '#10b981' : '#3b82f6',
-            fillOpacity: 0.03
-          }}
-        />
-      )}
+
 
       {/* Main Sensor Hub Marker */}
       <Marker 

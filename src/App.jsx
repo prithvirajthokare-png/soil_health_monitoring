@@ -45,7 +45,7 @@ export const SUPPORTED_LOCATIONS = [
     sensorId: 'SN_001',
     sensorStatus: 'ONLINE',
     locationStatus: 'LIVE',
-    locationType: 'FIELD',
+    locationType: 'POD',
     alertStatus: 'NORMAL',
     healthStatus: 'Healthy',
     cropCycleStart: '2025-10-01',
@@ -75,7 +75,7 @@ export const SUPPORTED_LOCATIONS = [
     sensorId: 'SN_002',
     sensorStatus: 'OFFLINE',
     locationStatus: 'LIVE',
-    locationType: 'FIELD',
+    locationType: 'POD',
     alertStatus: 'NORMAL',
     healthStatus: 'Healthy',
     cropCycleStart: '2026-01-01',
@@ -110,9 +110,10 @@ function normalizeLocation(loc) {
     normalized.crop = 'General Plant';
   }
   // Override backend coverage area
-  if (normalized.coverage_area === '48.5 Hectares') {
+  if (normalized.coverage_area === '48.5 Hectares' || normalized.coverage_area === '119.8 Acres') {
     normalized.coverage_area = 'Sensor Pod';
   }
+  normalized.locationType = 'POD';
   return normalized;
 }
 

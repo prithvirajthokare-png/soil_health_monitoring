@@ -12,6 +12,7 @@ import AlertsView from './components/AlertsView';
 import AiInsightsPanel from './components/AiInsightsPanel';
 import GlobalAlert from './components/GlobalAlert';
 import StatusBar from './components/StatusBar';
+import MicroclimateView from './components/MicroclimateView';
 import { 
   fetchFullLocationState, 
   fetchAllLocations, 
@@ -366,12 +367,20 @@ export default function App() {
       }
     }
 
-    if (activeTab !== 'map' && activeTab !== 'user-dashboard') {
+    if (activeTab !== 'map' && activeTab !== 'user-dashboard' && activeTab !== 'microclimate') {
       setActiveTab('map');
     }
   }, [activeTab, locationsList]);
 
   // Throttled cursor coordinates update
+  // Clean up transient drawing states when navigating to unrelated screens
+  useEffect(() => {
+    if (activeTab !== 'map' && activeTab !== 'locations') {
+      setDrawingMode(null);
+      setDraftLocationData(null);
+    }
+  }, [activeTab]);
+
   const handleCoordUpdate = useCallback((coords) => {
     const now = performance.now();
     if (now - lastCoordUpdateTimeRef.current > 120) {
@@ -396,6 +405,8 @@ export default function App() {
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     setIsGuestMode(false);
+    setDrawingMode(null);
+    setDraftLocationData(null);
     if (user.role === 'user') {
       setActiveTab('user-dashboard');
       if (user.assigned_farms && user.assigned_farms.length > 0) {
@@ -410,6 +421,8 @@ export default function App() {
     logoutUser();
     setCurrentUser(null);
     setIsGuestMode(false);
+    setDrawingMode(null);
+    setDraftLocationData(null);
   };
 
   // If user is neither logged in nor in guest mode, show the landing page
@@ -419,6 +432,8 @@ export default function App() {
         onLoginSuccess={handleLoginSuccess}
         onExploreGuest={() => {
           setIsGuestMode(true);
+          setDrawingMode(null);
+          setDraftLocationData(null);
           setActiveTab('dashboard');
         }}
       />
@@ -506,6 +521,7 @@ export default function App() {
               onCoordUpdate={handleCoordUpdate}
               zoomLevel={zoomLevel}
               drawingMode={drawingMode}
+              onStartDrawing={(payload) => setDrawingMode(payload)}
               onFinishDrawing={(updatedLoc) => {
                 setDrawingMode(null);
                 setDraftLocationData(updatedLoc);
@@ -513,7 +529,7 @@ export default function App() {
               }}
               onCancelDrawing={() => {
                 setDrawingMode(null);
-                setActiveTab('locations');
+                setDraftLocationData(null);
               }}
             />
           </div>
@@ -541,6 +557,20 @@ export default function App() {
             <AlertsView 
               locationsList={visibleLocations}
               onSelectLocation={handleSelectLocation}
+            />
+          </div>
+        )}
+
+        {/* Dedicated SparkFun micro:climate Kit Screen */}
+        {activeTab === 'microclimate' && (
+          <div className="w-full h-full overflow-y-auto block">
+            <MicroclimateView
+              locationData={locationData}
+              locationsList={visibleLocations}
+              selectedLocationId={selectedLocationId}
+              onSelectLocation={handleSelectLocation}
+              isAdmin={currentUser?.role === 'admin' || isGuestMode}
+              onBackToMap={() => setActiveTab(currentUser?.role === 'user' ? 'user-dashboard' : 'dashboard')}
             />
           </div>
         )}

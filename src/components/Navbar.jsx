@@ -19,7 +19,8 @@ import {
   User,
   LogOut,
   Lock,
-  Brain
+  Brain,
+  CloudSun
 } from 'lucide-react';
 import { downloadHistoricalDataCsv } from '../services/api';
 
@@ -190,6 +191,20 @@ export default function Navbar({
           >
             <Bell className="w-3.5 h-3.5" />
             <span>Alerts</span>
+          </button>
+
+          {/* Navigation Item: Microclimate Kit */}
+          <button
+            onClick={() => setActiveTab('microclimate')}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
+              activeTab === 'microclimate'
+                ? 'bg-emerald-600 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900'
+            }`}
+            title="SparkFun micro:climate Kit measurements"
+          >
+            <CloudSun className="w-3.5 h-3.5" />
+            <span>Microclimate</span>
           </button>
 
           {/* Navigation Item: Admin Hub (Admin only) */}

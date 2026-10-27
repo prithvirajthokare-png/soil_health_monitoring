@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   MapPin, 
   Search, 
@@ -35,6 +35,31 @@ export default function LocationsView({ locationsList, setLocationsList, setActi
     locationType: 'All'
   });
   
+  // React to draftLocationData returning from map drawing
+  useEffect(() => {
+    if (draftLocationData) {
+      if (draftLocationData.isEditing) {
+        setIsEditing(true);
+        setIsAdding(false);
+        if (draftLocationData.id) {
+          const loc = locationsList.find(l => l.id === draftLocationData.id);
+          if (loc) setSelectedLocation(loc);
+        }
+      } else if (draftLocationData.isAdding) {
+        setIsAdding(true);
+        setIsEditing(false);
+      } else {
+        if (draftLocationData.id && !String(draftLocationData.id).startsWith('DEMO_NEW')) {
+          setIsEditing(true);
+          const loc = locationsList.find(l => l.id === draftLocationData.id);
+          if (loc) setSelectedLocation(loc);
+        } else {
+          setIsAdding(true);
+        }
+      }
+    }
+  }, [draftLocationData, locationsList]);
+
   const [selectedLocation, setSelectedLocation] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -628,7 +653,15 @@ function LocationForm({ location, onSave, onCancel, onStartDrawing }) {
 
           <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 text-sm text-slate-400 flex items-center gap-3">
             <Info className="w-5 h-5 text-emerald-400 shrink-0" />
-            {formData.locationType === 'FIELD' && <span>Field boundary will be drawn on the map in the next stage.</span>}
+            {formData.locationType === 'FIELD' && (
+              formData.fieldBoundary && formData.fieldBoundary.length >= 3 ? (
+                <span className="text-emerald-400 font-semibold">
+                  Field boundary attached: {formData.fieldBoundary.length} vertices ({formData.fieldArea || 'Calculated'} {formData.areaUnit || 'acres'})
+                </span>
+              ) : (
+                <span>Field boundary polygon can be drawn or adjusted on the interactive map.</span>
+              )
+            )}
             {formData.locationType === 'PLANT' && <span>Plant location will be placed on the map in the next stage.</span>}
             {formData.locationType === 'POINT' && <span>No field boundary will be displayed.</span>}
           </div>

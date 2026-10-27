@@ -693,3 +693,195 @@ export async function fetchFullLocationState(locationId = 'LOC_001') {
     error: null
   };
 }
+
+
+// ============================================================================
+// RECOVERY METHODS (Preserved for Polygon Management, Crop History & Farm Requests)
+// ============================================================================
+
+/**
+ * Normalizes backend location geometry, polygon coordinates, and crop metadata.
+ * Pure client-side transformer compatible with Leaflet map polygons.
+ */
+export function normalizeBackendLocation(remote) {
+  if (!remote || !remote.id) return remote;
+
+  let fieldBoundary = null;
+  if (remote.geometry) {
+    try {
+      const geo = typeof remote.geometry === 'string' ? JSON.parse(remote.geometry) : remote.geometry;
+      if (geo && geo.type === 'Polygon' && Array.isArray(geo.coordinates) && Array.isArray(geo.coordinates[0])) {
+        // Map GeoJSON [lng, lat] coordinates to Leaflet [lat, lng] positions
+        fieldBoundary = geo.coordinates[0].map(coord => [coord[1], coord[0]]);
+      }
+    } catch (e) {
+      console.warn(`[normalizeBackendLocation] Failed to parse geometry for ${remote.id}:`, e);
+    }
+  }
+
+  const isField = Array.isArray(fieldBoundary) && fieldBoundary.length >= 3;
+  const coverageStr = remote.coverage_area ? String(remote.coverage_area) : '';
+  const match = coverageStr.match(/([0-9.]+)/);
+  const fieldArea = match ? match[1] : null;
+  const areaUnit = coverageStr.toLowerCase().includes('hectare') ? 'Hectares' : 'Acres';
+
+  return {
+    ...remote,
+    farmName: remote.farmName || remote.name || remote.id,
+    farmerName: remote.farmerName || remote.name || 'Owner',
+    crop: remote.crop || remote.current_crop || 'General Plant',
+    current_crop: remote.current_crop || remote.crop || 'general',
+    locationStatus: remote.locationStatus || 'LIVE',
+    status: remote.status || 'active',
+    locationType: isField ? 'FIELD' : (coverageStr.toLowerCase().includes('plant') ? 'PLANT' : 'POD'),
+    sensorStatus: (remote.sensor_id && remote.sensor_id !== 'SN_PENDING') ? 'ONLINE' : 'PENDING',
+    sensorId: remote.sensor_id || 'SN_PENDING',
+    alertStatus: remote.alertStatus || 'NORMAL',
+    healthStatus: remote.health_score != null ? 'Healthy' : 'No Signal',
+    fieldBoundary: fieldBoundary,
+    fieldArea: fieldArea,
+    areaUnit: areaUnit
+  };
+}
+
+/**
+ * Updates location parameters (coordinates, field boundary geometry, crop, etc.)
+ * Fully compatible with PUT /api/v1/locations/{location_id}
+ */
+export async function updateLocation(locationId, payload) {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = `${API_BASE_URL}/locations/${locationId}`;
+    try {
+      const response = await fetchWithTimeout(url, {
+        method: 'PUT',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }, 2500);
+
+      if (response.ok) {
+        return await response.json();
+      }
+      let errorDetail = `Failed to update location ${locationId}`;
+      try {
+        const err = await response.json();
+        if (err.detail) errorDetail = err.detail;
+      } catch (e) {}
+      throw new Error(errorDetail);
+    } catch (err) {
+      if (err.message && err.message.includes('Failed to update')) throw err;
+    }
+  }
+  // Offline / Demo fallback
+  return { id: locationId, ...payload, updated_at: new Date().toISOString() };
+}
+
+
+/**
+ * Retrieves historical crop records for a location.
+ * Route GET /api/v1/locations/{id}/crop-history (Scheduled for Phase 3 backend integration)
+ */
+export async function fetchCropHistory(locationId, order = 'desc') {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = `${API_BASE_URL}/locations/${locationId}/crop-history${order ? `?order=${order}` : ''}`;
+    try {
+      const response = await fetchWithTimeout(url, { headers: getAuthHeaders() }, 1500);
+      if (response.ok) return await response.json();
+    } catch (e) {}
+  }
+  return [];
+}
+
+/**
+ * Lists farm requests. Admins see all, Farmers see their own.
+ * Route GET /api/v1/farm-requests (Scheduled for Phase 4 backend integration)
+ */
+export async function fetchFarmRequests() {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = `${API_BASE_URL}/farm-requests`;
+    try {
+      const response = await fetchWithTimeout(url, { headers: getAuthHeaders() }, 1500);
+      if (response.ok) return await response.json();
+    } catch (e) {}
+  }
+  return [];
+}
+
+/**
+ * Submits a new farm creation or geometry/crop update request.
+ * Route POST /api/v1/farm-requests (Scheduled for Phase 4 backend integration)
+ */
+export async function submitFarmRequest(requestTypeOrPayload, payloadData) {
+  const body = typeof requestTypeOrPayload === 'string'
+    ? { request_type: requestTypeOrPayload, payload_data: payloadData }
+    : requestTypeOrPayload;
+
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = `${API_BASE_URL}/farm-requests`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      let errorDetail = 'Failed to submit farm request';
+      try {
+        const err = await response.json();
+        if (err.detail) errorDetail = err.detail;
+        else if (err.message) errorDetail = err.message;
+      } catch (e) {}
+      throw new Error(errorDetail);
+    } catch (err) {
+      if (err.message && err.message.includes('Failed to submit')) throw err;
+    }
+  }
+  // Local demo fallback response
+  return {
+    id: Date.now(),
+    request_type: body.request_type,
+    status: 'PENDING',
+    created_at: new Date().toISOString(),
+    payload: JSON.stringify(body.payload_data || {})
+  };
+}
+
+/**
+ * Admin review (approve/reject) of a pending farm request.
+ * Route POST /api/v1/farm-requests/{id}/review (Scheduled for Phase 4 backend integration)
+ */
+export async function reviewFarmRequest(requestId, action, rejectionReason = null) {
+  if (shouldAttemptBackend && API_BASE_URL) {
+    const url = `${API_BASE_URL}/farm-requests/${requestId}/review`;
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action, rejection_reason: rejectionReason })
+      });
+      if (response.ok) {
+        return await response.json();
+      }
+      let errorDetail = 'Failed to review farm request';
+      try {
+        const err = await response.json();
+        if (err.detail) errorDetail = err.detail;
+        else if (err.message) errorDetail = err.message;
+      } catch (e) {}
+      throw new Error(errorDetail);
+    } catch (err) {
+      if (err.message && err.message.includes('Failed to review')) throw err;
+    }
+  }
+  return { id: requestId, status: action === 'APPROVE' ? 'APPROVED' : 'REJECTED' };
+}

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -30,6 +31,12 @@ def test_db():
 @pytest.fixture(scope="function")
 def client(test_db):
     app = create_app()
+
+    @asynccontextmanager
+    async def _test_lifespan(app):
+        yield
+
+    app.router.lifespan_context = _test_lifespan
 
     def override_get_db():
         db = TestingSessionLocal()
